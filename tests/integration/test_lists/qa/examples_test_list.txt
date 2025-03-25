@@ -476,7 +476,12 @@ test_e2e.py::test_ptp_quickstart_advanced_8gpus[Llama3.1-70B-FP8-llama-3.1-model
 test_e2e.py::test_ptp_quickstart_advanced_8gpus[Llama3.1-405B-FP8-llama-3.1-model/Llama-3.1-405B-Instruct-FP8]
 test_e2e.py::test_ptp_quickstart_advanced_8gpus[Mixtral-8x7B-BF16-Mixtral-8x7B-v0.1]
 test_e2e.py::test_ptp_quickstart_advanced_8gpus[Mixtral-8x7B-NVFP4-nvfp4-quantized/Mixtral-8x7B-Instruct-v0.1]
-test_e2e.py::test_ptp_quickstart_advanced_deepseek_r1_8gpus[DeepSeek-R1-DeepSeek-R1/DeepSeek-R1]
+test_e2e.py::test_ptp_quickstart_advanced_8gpus[DeepSeek-V3-Lite-DeepSeek-V3-Lite/fp8]
+test_e2e.py::test_ptq_quickstart_advanced_mtp[DeepSeek-V3-Lite-BF16-DeepSeek-V3-Lite/bf16]
+test_e2e.py::test_ptp_quickstart_advanced_deepseek_8gpus[DeepSeek-V3-DeepSeek-V3-enable_cuda_graph]
+test_e2e.py::test_ptp_quickstart_advanced_deepseek_8gpus[DeepSeek-V3-DeepSeek-V3-disable_cuda_graph]
+test_e2e.py::test_ptp_quickstart_advanced_deepseek_8gpus[DeepSeek-R1-DeepSeek-R1/DeepSeek-R1-enable_cuda_graph]
+
 test_e2e.py::test_ptp_quickstart_multimodal[NVILA-8B-FP16-vila/NVILA-8B-image]
 test_e2e.py::test_ptp_quickstart_multimodal[NVILA-8B-FP16-vila/NVILA-8B-video]
 test_e2e.py::test_ptp_quickstart_multimodal[llava-v1.6-mistral-7b-llava-v1.6-mistral-7b-hf-image]

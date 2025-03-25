@@ -1428,15 +1428,18 @@ def test_ptq_quickstart_advanced_mtp(llm_root, llm_venv, model_name,
 
 @pytest.mark.skip_less_device_memory(110000)
 @pytest.mark.skip_less_device(8)
+@pytest.mark.parametrize("use_cuda_graph", [True, False],
+                         ids=["enable_cuda_graph", "disable_cuda_graph"])
 @pytest.mark.parametrize("model_name,model_path", [
     pytest.param(
         'DeepSeek-R1', 'DeepSeek-R1/DeepSeek-R1', marks=skip_pre_hopper),
+    pytest.param('DeepSeek-V3', 'DeepSeek-V3', marks=skip_pre_hopper),
 ])
-def test_ptp_quickstart_advanced_deepseek_r1_8gpus(llm_root, llm_venv,
-                                                   model_name, model_path):
+def test_ptp_quickstart_advanced_deepseek_8gpus(llm_root, llm_venv, model_name,
+                                                model_path, use_cuda_graph):
     print(f"Testing {model_name}.")
     example_root = Path(os.path.join(llm_root, "examples", "pytorch"))
-    llm_venv.run_cmd([
+    cmd = [
         str(example_root / "quickstart_advanced.py"),
         "--enable_overlap_scheduler",
         "--model_dir",
@@ -1444,13 +1447,17 @@ def test_ptp_quickstart_advanced_deepseek_r1_8gpus(llm_root, llm_venv,
         "--moe_tp_size=1",
         "--moe_ep_size=8",
         "--tp_size=8",
-        "--use_cuda_graph",
         "--enable_attention_dp",
         "--kv_cache_fraction=0.95",
         "--max_batch_size=1",
         "--max_seq_len=3000",
         "--kv_cache_enable_block_reuse",
-    ])
+    ]
+
+    if use_cuda_graph:
+        cmd.append("--use_cuda_graph")
+
+    llm_venv.run_cmd(cmd)
 
 
 @pytest.mark.skip_less_device_memory(80000)
@@ -1458,6 +1465,8 @@ def test_ptp_quickstart_advanced_deepseek_r1_8gpus(llm_root, llm_venv,
 @pytest.mark.parametrize("model_name,model_path", [
     ("Llama3.1-70B-BF16", "llama-3.1-model/Meta-Llama-3.1-70B"),
     ("Mixtral-8x7B-BF16", "Mixtral-8x7B-v0.1"),
+    pytest.param(
+        'DeepSeek-V3-Lite', 'DeepSeek-V3-Lite/fp8', marks=skip_pre_hopper),
     pytest.param('Llama3.1-70B-FP8',
                  'llama-3.1-model/Llama-3.1-70B-Instruct-FP8',
                  marks=skip_pre_hopper),
@@ -1472,14 +1481,16 @@ def test_ptp_quickstart_advanced_8gpus(llm_root, llm_venv, model_name,
                                        model_path):
     print(f"Testing {model_name}.")
     example_root = Path(os.path.join(llm_root, "examples", "pytorch"))
-    llm_venv.run_cmd([
+    cmd = [
         str(example_root / "quickstart_advanced.py"),
         "--enable_overlap_scheduler",
-        "--enable_chunked_prefill",
         "--model_dir",
         f"{llm_models_root()}/{model_path}",
         "--tp_size=8",
-    ])
+    ]
+    if model_name != 'DeepSeek-V3-Lite':
+        cmd.append("--enable_chunked_prefill")
+    llm_venv.run_cmd(cmd)
 
 
 @skip_pre_blackwell
