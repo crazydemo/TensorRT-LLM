@@ -377,6 +377,24 @@ class TestLlama7B(CliFlowAccuracyTestHarness):
     def test_manage_weights(self):
         self.run(extra_build_args=["--fast_build"])
 
+    @pytest.mark.skip_less_device(2)
+    def test_auto_parallel2(self):
+        self.run(
+            extra_convert_args=["gpus=1", "tp_size=1", "pp_size=1"],
+            extra_build_args=["--gemm_plugin=float16", "--auto_parallel=2"])
+
+    @pytest.mark.skip_less_device(2)
+    @skip_pre_ada
+    def test_fp8_reduce_fusion_tp2(self):
+        "RCCA https://nvbugs/4348560"
+        self.run(quant_algo=QuantAlgo.FP8,
+                 kv_cache_quant_algo=QuantAlgo.FP8,
+                 tp_size=2,
+                 extra_build_args=[
+                     "--use_fp8_context_fmha=disable", "--gemm_plugin=float16",
+                     "--reduce_fusion=enable"
+                 ])
+
 
 class TestLlama2_7B(CliFlowAccuracyTestHarness):
     MODEL_NAME = "meta-llama/Llama-2-7b-hf"
@@ -456,6 +474,25 @@ class TestLlama2_7B(CliFlowAccuracyTestHarness):
 
     def test_weight_sparsity(self):
         self.run(extra_build_args=["--weight_sparsity"])
+
+
+class TestLlama2_13B(CliFlowAccuracyTestHarness):
+    MODEL_NAME = "meta-llama/Llama-2-13b-hf"
+    MODEL_PATH = f"{llm_models_root()}/llama-models-v2/llama-v2-13b-hf"
+    EXAMPLE_FOLDER = "llama"
+
+    @pytest.mark.skip_less_device(2)
+    @skip_pre_ada
+    @pytest.mark.parametrize("reduce_fusion", ["enable", "disable"])
+    def test_fp8_reduce_fusion_tp2(self, reduce_fusion):
+        "RCCA https://nvbugs/4348560"
+        self.run(quant_algo=QuantAlgo.FP8,
+                 kv_cache_quant_algo=QuantAlgo.FP8,
+                 tp_size=2,
+                 extra_build_args=[
+                     f"--use_fp8_context_fmha={reduce_fusion}",
+                     "--gemm_plugin=float16", f"--reduce_fusion={reduce_fusion}"
+                 ])
 
 
 class TestTinyLlama1_1BChat(CliFlowAccuracyTestHarness):

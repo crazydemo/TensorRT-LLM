@@ -14,11 +14,12 @@
 # limitations under the License.
 import pytest
 
+from tensorrt_llm.builder import BuildConfig
 from tensorrt_llm.llmapi import LLM
 from tensorrt_llm.models.modeling_utils import QuantConfig
 from tensorrt_llm.quantization import QuantAlgo
 
-from ..conftest import llm_models_root, skip_pre_ada
+from ..conftest import llm_models_root, skip_pre_ada, skip_pre_blackwell
 from .accuracy_core import MMLU, CnnDailymail, LlmapiAccuracyTestHarness
 
 
@@ -33,6 +34,40 @@ class TestLlama3_1_8B(LlmapiAccuracyTestHarness):
         with LLM(self.MODEL_PATH, quant_config=quant_config) as llm:
             task = CnnDailymail(self.MODEL_NAME)
             task.evaluate(llm)
+            task = MMLU(self.MODEL_NAME)
+            task.evaluate(llm)
+
+
+class TestLlama3_1_70B_Instruct(LlmapiAccuracyTestHarness):
+    MODEL_NAME = "meta-llama/Llama-3.1-70B-Instruct"
+    MODEL_PATH = f"{llm_models_root()}/llama-3.1-model/Meta-Llama-3.1-70B-Instruct"
+
+    @skip_pre_blackwell
+    def test_nvfp4(self):
+        quant_config = QuantConfig(quant_algo=QuantAlgo.NVFP4,
+                                   kv_cache_quant_algo=QuantAlgo.FP8)
+        build_config = BuildConfig(
+            gemm_plugin="nvfp4",
+            fuse_fp4_quant=True,
+            norm_quant_fusion=True,
+        )
+
+        with LLM(self.MODEL_PATH,
+                 quant_config=quant_config,
+                 build_config=build_config) as llm:
+            task = MMLU(self.MODEL_NAME)
+            task.evaluate(llm)
+
+    @skip_pre_blackwell
+    @pytest.mark.skip_less_device(2)
+    def test_nvfp4_tp2(self):
+        quant_config = QuantConfig(quant_algo=QuantAlgo.NVFP4)
+        build_config = BuildConfig(gemm_plugin="nvfp4", )
+
+        with LLM(self.MODEL_PATH,
+                 quant_config=quant_config,
+                 build_config=build_config,
+                 tensor_parallel_size=2) as llm:
             task = MMLU(self.MODEL_NAME)
             task.evaluate(llm)
 
