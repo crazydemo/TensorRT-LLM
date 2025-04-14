@@ -1,0 +1,34 @@
+name: Test Changes Notification
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tests/**'
+
+jobs:
+  notify-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v37
+        with:
+          files: tests/**
+
+      - name: Create issue
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        with:
+          filename: .github/TEST_CHANGES_TEMPLATE.md
+          update_existing: true
+          search_existing: open
