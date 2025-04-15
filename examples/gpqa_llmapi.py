@@ -359,6 +359,10 @@ def parse_args():
                         type=int,
                         default=4096,
                         help="Maximum number of tokens")
+    parser.add_argument("--max_seq_len",
+                        type=int,
+                        default=4096,
+                        help="Maximum sequence length")
     parser.add_argument("--tp_size",
                         type=int,
                         default=1,
@@ -443,7 +447,8 @@ def main():
 
     # Configure the PyTorch model
     build_config = BuildConfig(max_batch_size=args.batch_size,
-                               max_num_tokens=args.max_num_tokens)
+                               max_num_tokens=args.max_num_tokens,
+                               max_seq_len=args.max_seq_len)
     pytorch_config = PyTorchConfig(
         attn_backend=args.attn_backend,
         enable_overlap_scheduler=args.enable_overlap_scheduler,

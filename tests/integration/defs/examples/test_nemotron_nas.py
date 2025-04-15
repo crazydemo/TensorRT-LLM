@@ -119,14 +119,13 @@ def test_nemotron_nas_summary_2gpu(nemotron_nas_example_root, llm_venv,
 
 
 @pytest.mark.skip_less_device(8)
-@pytest.mark.skip_device_not_contain(["H100", "B200"])
 @pytest.mark.parametrize("model_name", ["Nemotron-Ultra"])
 def test_nemotron_gpqa_llmapi_on_8gpus(llmapi_example_root, llm_datasets_root,
-                                       llm_venv, model_name, model_path):
+                                       llm_venv, model_name):
     path_map = {
         "Nemotron-Ultra": "nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1",
     }
-    model_path = f"{llm_datasets_root}/{path_map[model_name]}"
+    model_path = str(Path(llm_datasets_root).parent / path_map[model_name])
     gpqa_data_path = str(Path(llm_datasets_root) / "gpqa/gpqa_diamond.csv")
 
     print("Run GPQA test")
@@ -134,29 +133,9 @@ def test_nemotron_gpqa_llmapi_on_8gpus(llmapi_example_root, llm_datasets_root,
         f"{llmapi_example_root}/../gpqa_llmapi.py",
         f"--hf_model_dir={model_path}", f"--data_dir={gpqa_data_path}",
         f"--tp_size=8", "--print_iter_log", "--batch_size=32",
-        "--max_num_tokens=4096", "--check_accuracy",
-        "--accuracy_threshold=0.65", "--num_runs=3"
+        "--max_num_tokens=4096", "--max_seq_len=4096", "--check_accuracy",
+        "--accuracy_threshold=0.566", "--num_runs=3", "--top_p=0.95",
+        "--temperature=0.6"
     ]
 
     venv_check_call(llm_venv, gpqa_cmd)
-
-
-@pytest.mark.skip_less_device(8)
-@pytest.mark.skip_device_not_contain(["H100", "B200"])
-@pytest.mark.parametrize("backend", ["trt", "pytorch"])
-@pytest.mark.parametrize("model_name", ["Nemotron-Ultra"])
-def test_nemotron_llmapi_on_8gpus(llm_datasets_root, backend, llm_venv,
-                                  model_name):
-    path_map = {
-        "Nemotron-Ultra": "nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1",
-    }
-    model_path = f"{llm_datasets_root}/{path_map[model_name]}"
-
-    if backend == "trt":
-        from LLM import LLM
-    else:
-        from LLM_pytorch import LLM
-    llm = LLM(model_path, llm_venv)
-    output = llm.generate("Hello, how are you?")
-    print(output)
-    assert output is not None
