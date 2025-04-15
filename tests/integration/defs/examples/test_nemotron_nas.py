@@ -126,7 +126,7 @@ def test_nemotron_gpqa_llmapi_on_8gpus(llmapi_example_root, llm_datasets_root,
     path_map = {
         "Nemotron-Ultra": "nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1",
     }
-    model_path = path_map[model_name]
+    model_path = f"{llm_datasets_root}/{path_map[model_name]}"
     gpqa_data_path = str(Path(llm_datasets_root) / "gpqa/gpqa_diamond.csv")
 
     print("Run GPQA test")
@@ -139,3 +139,24 @@ def test_nemotron_gpqa_llmapi_on_8gpus(llmapi_example_root, llm_datasets_root,
     ]
 
     venv_check_call(llm_venv, gpqa_cmd)
+
+
+@pytest.mark.skip_less_device(8)
+@pytest.mark.skip_device_not_contain(["H100", "B200"])
+@pytest.mark.parametrize("backend", ["trt", "pytorch"])
+@pytest.mark.parametrize("model_name", ["Nemotron-Ultra"])
+def test_nemotron_llmapi_on_8gpus(llm_datasets_root, backend, llm_venv,
+                                  model_name):
+    path_map = {
+        "Nemotron-Ultra": "nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1",
+    }
+    model_path = f"{llm_datasets_root}/{path_map[model_name]}"
+
+    if backend == "trt":
+        from LLM import LLM
+    else:
+        from LLM_pytorch import LLM
+    llm = LLM(model_path, llm_venv)
+    output = llm.generate("Hello, how are you?")
+    print(output)
+    assert output is not None
