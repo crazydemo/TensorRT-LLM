@@ -155,7 +155,7 @@ mistralai/Mixtral-8x7B-v0.1:
     kv_cache_quant_algo: FP8
     accuracy: 29.733
   - quant_algo: FP8
-    kv_cache_quant_algo: FP8
+    kv_cache_quant_algo:
     accuracy: 27.109
 google/gemma-2b:
   - accuracy: 23.194
@@ -235,6 +235,8 @@ nvidia/Nemotron-Mini-4B-Instruct:
     kv_cache_quant_algo: FP8
     accuracy: 25.72
 nemotron-nas/Llama-3_1-Nemotron-51B-Instruct:
+  - accuracy: 35.672
+nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1:
   - accuracy: 35.672
 deepseek-ai/DeepSeek-V3-Lite:
   - accuracy: 26.465

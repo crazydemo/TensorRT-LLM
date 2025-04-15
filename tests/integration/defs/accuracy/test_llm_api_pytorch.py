@@ -443,7 +443,7 @@ class TestMinitron4BBaseInstruct(LlmapiAccuracyTestHarness):
             task.evaluate(llm)
 
 
-class TestNemotronNas(LlmapiAccuracyTestHarness):
+class TestNemotronNas51BInstruct(LlmapiAccuracyTestHarness):
     MODEL_NAME = "nemotron-nas/Llama-3_1-Nemotron-51B-Instruct"
     MODEL_PATH = f"{llm_models_root()}/nemotron-nas/Llama-3_1-Nemotron-51B-Instruct"
 
@@ -456,6 +456,19 @@ class TestNemotronNas(LlmapiAccuracyTestHarness):
                  tensor_parallel_size=8,
                  kv_cache_config=kv_cache_config,
                  pytorch_backend_config=pytorch_config) as llm:
+
+            task = CnnDailymail(self.MODEL_NAME)
+            task.evaluate(llm)
+
+
+class TestNemotronNasUltra253B(LlmapiAccuracyTestHarness):
+    MODEL_NAME = "nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1"
+    MODEL_PATH = f"{llm_models_root()}/nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1"
+
+    @pytest.mark.skip_less_device(8)
+    @skip_pre_hopper
+    def test_auto_dtype_tp8(self):
+        with LLM(self.MODEL_PATH, tensor_parallel_size=8) as llm:
 
             task = CnnDailymail(self.MODEL_NAME)
             task.evaluate(llm)
