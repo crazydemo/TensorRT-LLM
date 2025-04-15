@@ -116,3 +116,26 @@ def test_nemotron_nas_summary_2gpu(nemotron_nas_example_root, llm_venv,
     ]
 
     venv_mpi_check_call(llm_venv, mpi_cmd, summary_cmd)
+
+
+@pytest.mark.skip_less_device(8)
+@pytest.mark.skip_device_not_contain(["H100", "B200"])
+@pytest.mark.parametrize("model_name", ["Nemotron-Ultra"])
+def test_nemotron_gpqa_llmapi_on_8gpus(llmapi_example_root, llm_datasets_root,
+                                       llm_venv, model_name, model_path):
+    path_map = {
+        "Nemotron-Ultra": "nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1",
+    }
+    model_path = path_map[model_name]
+    gpqa_data_path = str(Path(llm_datasets_root) / "gpqa/gpqa_diamond.csv")
+
+    print("Run GPQA test")
+    gpqa_cmd = [
+        f"{llmapi_example_root}/../gpqa_llmapi.py",
+        f"--hf_model_dir={model_path}", f"--data_dir={gpqa_data_path}",
+        f"--tp_size=8", "--print_iter_log", "--batch_size=32",
+        "--max_num_tokens=4096", "--check_accuracy",
+        "--accuracy_threshold=0.65", "--num_runs=3"
+    ]
+
+    venv_check_call(llm_venv, gpqa_cmd)
