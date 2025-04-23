@@ -116,12 +116,12 @@ jobs:
                 repo: context.repo.repo,
                 title: `[tests] ${commitMessage} (${shortenedHash})`,
                 labels: ['tests', 'unchecked'],
-                body: ## Commit Details for tests Directory Update
+                body: `## Commit Details for tests Directory Update
 
-                  **Author:** ${commitAuthor}
-                  **Date:** ${commitDate}
-                  Please review these changes and decide if you need to make corresponding updates in your implementation.
-                  [View original commit](https://github.com/NVIDIA/TensorRT-LLM/commit/${commitHash})
+            **Author:** ${commitAuthor}
+            **Date:** ${commitDate}
+            Please review these changes and decide if you need to make corresponding updates in your implementation.
+            [View original commit](https://github.com/NVIDIA/TensorRT-LLM/commit/${commitHash})`
               });
             }
       - name: Create Issue for docs changes
@@ -149,11 +149,11 @@ jobs:
                 repo: context.repo.repo,
                 title: `[docs] ${commitMessage} (${shortenedHash})`,
                 labels: ['docs', 'unchecked'],
-                body: ## Commit Details for docs Directory Update
+                body: `## Commit Details for docs Directory Update
 
-                  **Author:** ${commitAuthor}
-                  **Date:** ${commitDate}
-                  Please review these changes and decide if you need to make corresponding updates in your documentation.
-                  [View original commit](https://github.com/NVIDIA/TensorRT-LLM/commit/${commitHash})
+            **Author:** ${commitAuthor}
+            **Date:** ${commitDate}
+            Please review these changes and decide if you need to make corresponding updates in your documentation.
+            [View original commit](https://github.com/NVIDIA/TensorRT-LLM/commit/${commitHash})`
               });
             }
