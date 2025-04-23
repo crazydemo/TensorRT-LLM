@@ -1,0 +1,151 @@
+name: Monitor Tests and Docs Changes
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Run every 6 hours
+  workflow_dispatch:       # Allow manual trigger
+jobs:
+  sync-and-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Configure Git
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      - name: Add original repository and fetch updates
+        run: |
+          git remote add upstream https://github.com/NVIDIA/TensorRT-LLM.git
+          git fetch upstream main
+
+      - name: Ensure main branch exists and switch to it
+        run: |
+          git checkout --track origin/main
+      - name: Check for changes in tests and docs directories
+        id: check_changes
+        run: |
+          # Get the last sync point on main branch
+          LAST_SYNC=$(git rev-parse HEAD || echo "")
+
+          # Get the latest commit from upstream repository
+          UPSTREAM_HEAD=$(git rev-parse upstream/main)
+
+          # Create temporary directories to store commit information
+          mkdir -p /tmp/commits/tests
+          mkdir -p /tmp/commits/docs
+
+          # If there's a last sync point, compare changes; otherwise, get all files
+          if [ -n "$LAST_SYNC" ]; then
+            # Get commits that modified the tests directory
+            TEST_COMMITS=$(git log --pretty=format:"%H" $LAST_SYNC..upstream/main -- tests/)
+            # Get commits that modified the docs directory
+            DOCS_COMMITS=$(git log --pretty=format:"%H" $LAST_SYNC..upstream/main -- docs/)
+          else
+            # Get all commits that modified the tests directory
+            TEST_COMMITS=$(git log --pretty=format:"%H" upstream/main -- tests/)
+            # Get all commits that modified the docs directory
+            DOCS_COMMITS=$(git log --pretty=format:"%H" upstream/main -- docs/)
+          fi
+
+          # Save commit hashes to files
+          echo "$TEST_COMMITS" > /tmp/test_commits.txt
+          echo "$DOCS_COMMITS" > /tmp/docs_commits.txt
+
+          # Create detailed information files for each commit that modified tests
+          echo "" > /tmp/test_commits_count.txt
+          TEST_COUNT=0
+          if [ -n "$TEST_COMMITS" ]; then
+            for COMMIT in $TEST_COMMITS; do
+              git show --name-only --pretty=format:"COMMIT_HASH: %H%nCOMMIT_AUTHOR: %an%nCOMMIT_DATE: %ad%nCOMMIT_MESSAGE:" $COMMIT > "/tmp/commits/tests/$COMMIT.txt"
+              git show --name-only --pretty="format:" $COMMIT | grep -v "^$" >> "/tmp/commits/tests/$COMMIT.txt"
+              TEST_COUNT=$((TEST_COUNT+1))
+            done
+          fi
+          echo "$TEST_COUNT" > /tmp/test_commits_count.txt
+
+          # Create detailed information files for each commit that modified docs
+          echo "" > /tmp/docs_commits_count.txt
+          DOCS_COUNT=0
+          if [ -n "$DOCS_COMMITS" ]; then
+            for COMMIT in $DOCS_COMMITS; do
+              git show --name-only --pretty=format:"COMMIT_HASH: %H%nCOMMIT_AUTHOR: %an%nCOMMIT_DATE: %ad%nCOMMIT_MESSAGE:" $COMMIT > "/tmp/commits/docs/$COMMIT.txt"
+              git show --name-only --pretty="format:" $COMMIT | grep -v "^$" >> "/tmp/commits/docs/$COMMIT.txt"
+              DOCS_COUNT=$((DOCS_COUNT+1))
+            done
+          fi
+          echo "$DOCS_COUNT" > /tmp/docs_commits_count.txt
+
+          # Set output variables
+          echo "has_tests_changes=$([[ $TEST_COUNT -gt 0 ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "has_docs_changes=$([[ $DOCS_COUNT -gt 0 ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "test_commits_count=$TEST_COUNT" >> $GITHUB_OUTPUT
+          echo "docs_commits_count=$DOCS_COUNT" >> $GITHUB_OUTPUT
+          echo "upstream_head=$UPSTREAM_HEAD" >> $GITHUB_OUTPUT
+      - name: Sync updates to main branch
+        run: |
+          # Ensure we're on the main branch
+          git checkout main
+          # Merge upstream changes
+          git merge upstream/main --no-edit
+          # Push changes
+          git push origin main
+      - name: Create Issue for tests changes
+        if: steps.check_changes.outputs.has_tests_changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const testCount = parseInt(fs.readFileSync('/tmp/test_commits_count.txt', 'utf8').trim());
+            const testCommits = fs.readFileSync('/tmp/test_commits.txt', 'utf8').trim().split('\n').filter(line => line.trim() !== '');
+
+            for (const commit of testCommits) {
+              const commitInfo = fs.readFileSync(`/tmp/commits/tests/${commit}.txt`, 'utf8');
+
+              // Extract commit information for title
+              const commitMessage = commitInfo.match(/COMMIT_MESSAGE: (.*)/)?.[1] || 'Unknown commit message';
+              const commitHash = commitInfo.match(/COMMIT_HASH: (.*)/)?.[1] || 'Unknown hash';
+              const shortenedHash = commitHash.substring(0, 7);
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[tests] ${commitMessage} (${shortenedHash})`,
+                labels: ['tests', 'unchecked'],
+                body: `## Commit Details for tests Directory Update
+                  ${commitInfo}
+                  Please review these changes and decide if you need to make corresponding updates in your implementation.
+                  [View original commit](https://github.com/NVIDIA/TensorRT-LLM/commit/${commitHash})`
+              });
+            }
+      - name: Create Issue for docs changes
+        if: steps.check_changes.outputs.has_docs_changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const docsCount = parseInt(fs.readFileSync('/tmp/docs_commits_count.txt', 'utf8').trim());
+            const docsCommits = fs.readFileSync('/tmp/docs_commits.txt', 'utf8').trim().split('\n').filter(line => line.trim() !== '');
+
+            for (const commit of docsCommits) {
+              const commitInfo = fs.readFileSync(`/tmp/commits/docs/${commit}.txt`, 'utf8');
+
+              // Extract commit information for title
+              const commitMessage = commitInfo.match(/COMMIT_MESSAGE: (.*)/)?.[1] || 'Unknown commit message';
+              const commitHash = commitInfo.match(/COMMIT_HASH: (.*)/)?.[1] || 'Unknown hash';
+              const shortenedHash = commitHash.substring(0, 7);
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[docs] ${commitMessage} (${shortenedHash})`,
+                labels: ['docs', 'unchecked'],
+                body: `## Commit Details for docs Directory Update
+                  ${commitInfo}
+                  Please review these changes and decide if you need to make corresponding updates in your documentation.
+                  [View original commit](https://github.com/NVIDIA/TensorRT-LLM/commit/${commitHash})`
+              });
+            }
