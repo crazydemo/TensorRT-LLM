@@ -58,7 +58,7 @@ jobs:
           TEST_COUNT=0
           if [ -n "$TEST_COMMITS" ]; then
             for COMMIT in $TEST_COMMITS; do
-              git show --name-only --pretty=format:"COMMIT_HASH: %H%nCOMMIT_AUTHOR: %an%nCOMMIT_DATE: %ad%nCOMMIT_MESSAGE:" $COMMIT > "/tmp/commits/tests/$COMMIT.txt"
+              git show --name-only --pretty=format:"COMMIT_HASH: %H%nCOMMIT_AUTHOR: %an%nCOMMIT_DATE: %ad%nCOMMIT_MESSAGE: %s%nCOMMIT_BODY: %b%n%nMODIFIED_FILES:" $COMMIT > "/tmp/commits/tests/$COMMIT.txt"
               git show --name-only --pretty="format:" $COMMIT | grep -v "^$" >> "/tmp/commits/tests/$COMMIT.txt"
               TEST_COUNT=$((TEST_COUNT+1))
             done
@@ -70,7 +70,7 @@ jobs:
           DOCS_COUNT=0
           if [ -n "$DOCS_COMMITS" ]; then
             for COMMIT in $DOCS_COMMITS; do
-              git show --name-only --pretty=format:"COMMIT_HASH: %H%nCOMMIT_AUTHOR: %an%nCOMMIT_DATE: %ad%nCOMMIT_MESSAGE:" $COMMIT > "/tmp/commits/docs/$COMMIT.txt"
+              git show --name-only --pretty=format:"COMMIT_HASH: %H%nCOMMIT_AUTHOR: %an%nCOMMIT_DATE: %ad%nCOMMIT_MESSAGE: %s%nCOMMIT_BODY: %b%n%nMODIFIED_FILES:" $COMMIT > "/tmp/commits/docs/$COMMIT.txt"
               git show --name-only --pretty="format:" $COMMIT | grep -v "^$" >> "/tmp/commits/docs/$COMMIT.txt"
               DOCS_COUNT=$((DOCS_COUNT+1))
             done
@@ -107,6 +107,8 @@ jobs:
               // Extract commit information for title
               const commitMessage = commitInfo.match(/COMMIT_MESSAGE: (.*)/)?.[1] || 'Unknown commit message';
               const commitHash = commitInfo.match(/COMMIT_HASH: (.*)/)?.[1] || 'Unknown hash';
+              const commitAuthor = commitInfo.match(/COMMIT_AUTHOR: (.*)/)?.[1] || 'Unknown author';
+              const commitDate = commitInfo.match(/COMMIT_DATE: (.*)/)?.[1] || 'Unknown date';
               const shortenedHash = commitHash.substring(0, 7);
 
               await github.rest.issues.create({
@@ -115,7 +117,8 @@ jobs:
                 title: `[tests] ${commitMessage} (${shortenedHash})`,
                 labels: ['tests', 'unchecked'],
                 body: `## Commit Details for tests Directory Update
-                  ${commitInfo}
+                  **Author:** ${commitAuthor}
+                  **Date:** ${commitDate}
                   Please review these changes and decide if you need to make corresponding updates in your implementation.
                   [View original commit](https://github.com/NVIDIA/TensorRT-LLM/commit/${commitHash})`
               });
@@ -136,6 +139,8 @@ jobs:
               // Extract commit information for title
               const commitMessage = commitInfo.match(/COMMIT_MESSAGE: (.*)/)?.[1] || 'Unknown commit message';
               const commitHash = commitInfo.match(/COMMIT_HASH: (.*)/)?.[1] || 'Unknown hash';
+              const commitAuthor = commitInfo.match(/COMMIT_AUTHOR: (.*)/)?.[1] || 'Unknown author';
+              const commitDate = commitInfo.match(/COMMIT_DATE: (.*)/)?.[1] || 'Unknown date';
               const shortenedHash = commitHash.substring(0, 7);
 
               await github.rest.issues.create({
@@ -144,7 +149,8 @@ jobs:
                 title: `[docs] ${commitMessage} (${shortenedHash})`,
                 labels: ['docs', 'unchecked'],
                 body: `## Commit Details for docs Directory Update
-                  ${commitInfo}
+                  **Author:** ${commitAuthor}
+                  **Date:** ${commitDate}
                   Please review these changes and decide if you need to make corresponding updates in your documentation.
                   [View original commit](https://github.com/NVIDIA/TensorRT-LLM/commit/${commitHash})`
               });
