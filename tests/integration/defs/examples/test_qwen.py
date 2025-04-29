@@ -25,6 +25,48 @@ from defs.conftest import (get_device_count, get_device_memory,
 from defs.trt_test_alternative import check_call
 
 
+@pytest.mark.parametrize("llm_qwen_model_root", ["qwen2_0.5b_instruct"],
+                         indirect=True)
+def test_llm_qwen_context_parallelism(
+    qwen_example_root,
+    llm_qwen_model_root,
+    llm_datasets_root,
+    llm_rouge_root,
+    llm_venv,
+    cmodel_dir,
+    engine_dir,
+):
+    "Build & run Qwen2-7B-Chat on single gpu."
+    print("Converting checkpoint...")
+    dtype = 'float16'
+    model_name = os.path.basename(llm_qwen_model_root)
+    ckpt_dir = convert_weights(llm_venv=llm_venv,
+                               example_root=qwen_example_root,
+                               cmodel_dir=cmodel_dir,
+                               model=model_name,
+                               model_path=llm_qwen_model_root,
+                               data_type=dtype,
+                               cp_size=4)
+    print("Building engines...")
+    build_cmd = [
+        "trtllm-build", f"--checkpoint_dir={ckpt_dir}",
+        f"--output_dir={engine_dir}", "--gemm_plugin=bfloat16",
+        "--gpt_attention_plugin=bfloat16", "--gather_generation_logits",
+        "--max_batch_size=64", "--max_num_tokens=40001",
+        "--max_input_len=40000", "--max_seq_len=40001",
+        "--opt_num_tokens=16384", "--use_paged_context_fmha=enable"
+    ]
+    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
+    summary_cmd = [
+        f"{qwen_example_root}/../summarize.py", "--test_trt_llm",
+        "--hf_model_dir", f"{llm_qwen_model_root}", "--data_type", "fp16",
+        "--check_accuracy", f"--engine_dir={engine_dir}",
+        f"--tensorrt_llm_rouge1_threshold=22",
+        f"--dataset_dir={llm_datasets_root}", f"--rouge_dir={llm_rouge_root}"
+    ]
+    venv_check_call(llm_venv, summary_cmd)
+
+
 @pytest.mark.parametrize(
     "context_fmha_type",
     ['enable_fmha', 'disable_fmha', 'enable_fmha_fp32_acc'])
