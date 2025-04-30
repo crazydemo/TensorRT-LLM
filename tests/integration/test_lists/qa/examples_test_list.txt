@@ -260,6 +260,7 @@ examples/test_pytorch.py::test_llm_deepseek_1gpu[deepseek-v3-lite-disable_fp8-en
 examples/test_pytorch.py::test_llm_deepseek_1gpu[deepseek-v3-lite-disable_fp8-disable_fp4]
 examples/test_pytorch.py::test_llm_deepseek_1gpu[deepseek-v3-lite-enable_fp8-disable_fp4]
 examples/test_qwen.py::test_llm_qwen_context_parallelism[qwen2_0.5b_instruct]
+examples/test_qwen.py::test_llm_qwen_fp8_quant_fp8_kv_cache[qwen2_0.5b_instruct]
 examples/test_qwen.py::test_llm_qwen1_5_7b_single_gpu_lora[qwen1.5_7b_chat-Qwen1.5-7B-Chat-750Mb-lora]
 examples/test_qwen.py::test_llm_qwen1_5_moe_plugin_single_gpu_lora[qwen1.5_moe_a2.7b_chat-Upcycled-Qwen1.5-MoE2.7B-LoRA]
 examples/test_qwen.py::test_llm_qwen1_5_moe_single_gpu_lora[qwen1.5_moe_a2.7b_chat-Upcycled-Qwen1.5-MoE2.7B-LoRA]
