@@ -262,11 +262,16 @@ class TestLlama4MaverickInstruct(LlmapiAccuracyTestHarness):
                                                          (8, 1, 8)],
                              ids=["tp8", "tp8ep4", "tp8ep8"])
     def test_auto_dtype(self, cuda_graph, tp_size, pp_size, ep_size):
+        kv_cache_config = KvCacheConfig(free_gpu_memory_fraction=0.1,
+                                        enable_block_reuse=False)
         with LLM(self.MODEL_PATH,
                  tensor_parallel_size=tp_size,
                  pipeline_parallel_size=pp_size,
                  moe_expert_parallel_size=ep_size,
-                 use_cuda_graph=cuda_graph) as llm:
+                 use_cuda_graph=cuda_graph,
+                 kv_cache_config=kv_cache_config,
+                 max_batch_size=1,
+                 max_num_tokens=1024) as llm:
             task = MMLU(self.MODEL_NAME)
             task.evaluate(llm)
             task = GSM8K(self.MODEL_NAME)
