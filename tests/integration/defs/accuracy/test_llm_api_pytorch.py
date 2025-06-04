@@ -1111,6 +1111,19 @@ class TestNemotronH(LlmapiAccuracyTestHarness):
             task = GSM8K(self.MODEL_NAME)
             task.evaluate(llm)
 
+    def test_auto_dtype_pp2(self):
+        # TODO: remove max_batch_size after mamba cache manager is supported
+        # ToDo: check 47b and 56b model
+        kv_cache_config = KvCacheConfig(enable_block_reuse=False)
+        with LLM(self.MODEL_PATH,
+                 kv_cache_config=kv_cache_config,
+                 max_batch_size=128,
+                 pipeline_parallel_size=2) as llm:
+            task = MMLU(self.MODEL_NAME)
+            task.evaluate(llm)
+            task = GSM8K(self.MODEL_NAME)
+            task.evaluate(llm)
+
 
 class TestQwen2_7BInstruct(LlmapiAccuracyTestHarness):
     MODEL_NAME = "Qwen/Qwen2-7B-Instruct"
