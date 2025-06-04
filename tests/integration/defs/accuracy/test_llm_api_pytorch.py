@@ -970,6 +970,25 @@ class TestDeepSeekR1(LlmapiAccuracyTestHarness):
             task = GSM8K(self.MODEL_NAME)
             task.evaluate(llm)
 
+    @pytest.mark.skip_device_not_contain(["H100"])
+    def test_W4AFP8_tp8(self):
+        with LLM(f"{llm_models_root()}/DeepSeek-R1/DeepSeek-R1-W4AFP8",
+                 tensor_parallel_size=8) as llm:
+            task = MMLU(self.MODEL_NAME)
+            task.evaluate(llm)
+            task = GSM8K(self.MODEL_NAME)
+            task.evaluate(llm)
+
+    @pytest.mark.skip_less_device_memory(96000)
+    @skip_post_blackwell
+    def test_W4AFP8_tp4(self):
+        with LLM(f"{llm_models_root()}/DeepSeek-R1/DeepSeek-R1-W4AFP8",
+                 tensor_parallel_size=4) as llm:
+            task = MMLU(self.MODEL_NAME)
+            task.evaluate(llm)
+            task = GSM8K(self.MODEL_NAME)
+            task.evaluate(llm)
+
 
 class TestMinitron4BBaseInstruct(LlmapiAccuracyTestHarness):
     MODEL_NAME = "nvidia/Nemotron-Mini-4B-Instruct"
