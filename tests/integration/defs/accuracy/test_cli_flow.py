@@ -243,7 +243,8 @@ class TestNemotronUltra(CliFlowAccuracyTestHarness):
     @pytest.mark.skip_device_not_contain(["H100", "B200"])
     @parametrize_with_ids("cuda_graph", [False, True])
     @pytest.mark.parametrize("tp_size,pp_size", [(8, 1)], ids=["tp8"])
-    def test_auto_dtype(self, cuda_graph, tp_size, pp_size):
+    def test_auto_dtype(self, cuda_graph, tp_size, pp_size, mocker):
+        mocker.patch.object(MMLU, "MAX_BATCH_SIZE", 32)
         extra_summarize_args = []
         if cuda_graph:
             extra_summarize_args.append("--cuda_graph_mode")
