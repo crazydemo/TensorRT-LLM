@@ -208,7 +208,7 @@ def call(*popenargs,
     poll_procs = poll_procs or []
     if not suppress_output_info:
         print(f"Start subprocess with call({popenargs}, {kwargs})")
-    actual_timeout = get_pytest_timeout(timeout)
+    actual_timeout = get_remaining_time(timeout)
     with popen(*popenargs,
                start_new_session=start_new_session,
                suppress_output_info=True,
@@ -240,7 +240,7 @@ def check_call(*popenargs, **kwargs):
 
 def check_output(*popenargs, timeout=None, start_new_session=True, **kwargs):
     print(f"Start subprocess with check_output({popenargs}, {kwargs})")
-    actual_timeout = get_pytest_timeout(timeout)
+    actual_timeout = get_remaining_time(timeout)
     with Popen(*popenargs,
                stdout=subprocess.PIPE,
                start_new_session=start_new_session,
@@ -344,3 +344,47 @@ def get_pytest_timeout(timeout=None):
         print(f"Error getting pytest timeout: {e}")
 
     return timeout
+
+
+# Global variable to track test start time
+_test_start_time = None
+
+
+def get_remaining_time(timeout=None):
+    """
+    Get remaining time for the current test based on pytest timeout marker.
+    This function tracks the elapsed time since test start and returns the remaining time.
+
+    Args:
+        timeout: Optional timeout override. If None, uses pytest timeout marker.
+
+    Returns:
+        float: Remaining time in seconds, or None if no timeout is set.
+    """
+    global _test_start_time
+
+    # Get the total timeout for this test
+    total_timeout = get_pytest_timeout(timeout)
+    if total_timeout is None:
+        return None
+
+    # Initialize start time if not set
+    if _test_start_time is None:
+        _test_start_time = time.time()
+
+    # Calculate elapsed time
+    elapsed_time = time.time() - _test_start_time
+
+    # Calculate remaining time
+    remaining_time = total_timeout - elapsed_time
+
+    # Return remaining time, but ensure it's not negative
+    return max(0.0, remaining_time)
+
+
+def reset_test_timer():
+    """
+    Reset the test timer. Call this at the beginning of each test.
+    """
+    global _test_start_time
+    _test_start_time = time.time()
