@@ -2312,3 +2312,185 @@ def tritonserver_test_root(llm_root):
                                      "tests/integration/defs/triton_server")
 
     return tritonserver_root
+
+
+# 自动注入自定义超时 fixture
+def pytest_configure(config):
+    """pytest 配置钩子，自动注入自定义超时处理"""
+    # 避免线程泄漏
+    import tqdm
+    tqdm.tqdm.monitor_interval = 0
+
+
+def pytest_runtest_setup(item):
+    """测试运行前设置，自动为所有测试添加超时管理"""
+    # 获取测试的超时设置
+    timeout_seconds = 3600  # 默认1小时
+
+    # 从 pytest mark 获取超时设置
+    timeout_mark = item.get_closest_marker('timeout')
+    if timeout_mark and timeout_mark.args:
+        timeout_seconds = timeout_mark.args[0]
+
+    # 从命令行参数获取全局超时设置
+    if hasattr(item.config.option, 'timeout') and item.config.option.timeout:
+        timeout_seconds = item.config.option.timeout
+
+    # 设置超时管理器
+    try:
+        from .global_timeout_manager import get_global_timeout_manager
+        timeout_manager = get_global_timeout_manager()
+        if timeout_manager:
+            timeout_manager.start_test(timeout_seconds)
+    except ImportError:
+        pass
+
+
+def pytest_runtest_teardown(item, nextitem):
+    """测试运行后清理"""
+    try:
+        from .global_timeout_manager import get_global_timeout_manager
+        timeout_manager = get_global_timeout_manager()
+        if timeout_manager:
+            timeout_manager.end_test()
+    except ImportError:
+        pass
+
+
+# 自动为所有测试函数注入 process_runner fixture
+def pytest_generate_tests(metafunc):
+    """自动为所有测试函数注入 process_runner fixture"""
+    # 检查是否已经有 process_runner 参数
+    if 'process_runner' not in metafunc.fixturenames:
+        # 自动添加 process_runner fixture
+        metafunc.fixturenames.append('process_runner')
+
+        # 如果函数签名中没有 process_runner，我们需要动态添加
+        # 这里我们通过修改函数参数来实现
+        if hasattr(metafunc.definition, 'func'):
+            import inspect
+            sig = inspect.signature(metafunc.definition.func)
+            if 'process_runner' not in sig.parameters:
+                # 创建一个包装函数，自动注入 process_runner
+                original_func = metafunc.definition.func
+
+                def wrapped_func(*args, process_runner=None, **kwargs):
+                    return original_func(*args, **kwargs)
+
+                # 更新函数签名
+                wrapped_func.__name__ = original_func.__name__
+                wrapped_func.__doc__ = original_func.__doc__
+                metafunc.definition.func = wrapped_func
+
+
+# 在文件末尾添加以下内容
+
+# 导入全局超时管理器
+try:
+    from .global_timeout_manager import (get_global_timeout_manager,
+                                         run_with_global_timeout)
+except ImportError:
+    # 如果导入失败，提供默认实现
+    def get_global_timeout_manager():
+        return None
+
+    def run_with_global_timeout(cmd,
+                                timeout=None,
+                                shell=True,
+                                cwd=None,
+                                env=None):
+        import os
+        import signal
+        import subprocess
+
+        with subprocess.Popen(cmd,
+                              shell=shell,
+                              start_new_session=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              cwd=cwd,
+                              env=env or os.environ.copy()) as proc:
+            try:
+                stdout, stderr = proc.communicate(timeout=timeout or 3600)
+                return stdout.decode('utf-8', errors='ignore'), \
+                       stderr.decode('utf-8', errors='ignore'), \
+                       proc.returncode
+            except subprocess.TimeoutExpired:
+                try:
+                    pgid = os.getpgid(proc.pid)
+                    os.killpg(pgid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError, OSError):
+                    try:
+                        os.kill(proc.pid, signal.SIGKILL)
+                    except (ProcessLookupError, PermissionError):
+                        pass
+                return "", f"TIMEOUT after {timeout or 3600} seconds", -1
+
+
+@pytest.fixture(scope="function")
+def process_runner():
+    """提供进程运行器 fixture，支持全局超时管理"""
+
+    class ProcessRunner:
+
+        def __init__(self):
+            self.timeout_manager = get_global_timeout_manager()
+
+        def run_with_timeout(self,
+                             cmd: str,
+                             timeout: float = None,
+                             shell: bool = True,
+                             cwd: str = None,
+                             env: dict = None) -> tuple[str, str, int]:
+            """运行命令并返回 (stdout, stderr, returncode)"""
+            return run_with_global_timeout(cmd, timeout, shell, cwd, env)
+
+        def get_remaining_time(self) -> float:
+            """获取剩余时间"""
+            if self.timeout_manager:
+                remaining = self.timeout_manager.get_remaining_time()
+                return remaining if remaining is not None else 3600
+            return 3600
+
+    return ProcessRunner()
+
+
+# 修改现有的 pytest 钩子函数
+def pytest_configure(config):
+    """pytest 配置钩子，自动注入自定义超时处理"""
+    # 避免线程泄漏
+    import tqdm
+    tqdm.tqdm.monitor_interval = 0
+
+
+def pytest_runtest_setup(item):
+    """测试运行前设置，自动为所有测试添加超时管理"""
+    # 获取测试的超时设置
+    timeout_seconds = 3600  # 默认1小时
+
+    # 从 pytest mark 获取超时设置
+    timeout_mark = item.get_closest_marker('timeout')
+    if timeout_mark and timeout_mark.args:
+        timeout_seconds = timeout_mark.args[0]
+
+    # 从命令行参数获取全局超时设置
+    if hasattr(item.config.option, 'timeout') and item.config.option.timeout:
+        timeout_seconds = item.config.option.timeout
+
+    # 设置超时管理器
+    timeout_manager = get_global_timeout_manager()
+    if timeout_manager:
+        timeout_manager.start_test(timeout_seconds)
+
+
+def pytest_runtest_teardown(item, nextitem):
+    """测试运行后清理"""
+    timeout_manager = get_global_timeout_manager()
+    if timeout_manager:
+        timeout_manager.end_test()
+
+
+# 移除有问题的自动注入逻辑，改为简单的 fixture 定义
+def pytest_generate_tests(metafunc):
+    """为测试函数生成参数，但不自动注入 process_runner"""
+    # 这里可以添加其他参数生成逻辑，但不自动注入 process_runner

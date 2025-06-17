@@ -208,7 +208,23 @@ def call(*popenargs,
     poll_procs = poll_procs or []
     if not suppress_output_info:
         print(f"Start subprocess with call({popenargs}, {kwargs})")
-    actual_timeout = get_pytest_timeout(timeout)
+
+    # 尝试获取自定义超时管理器
+    custom_timeout = None
+    try:
+        from .timeout_fixture import _custom_timeout_plugin
+        if _custom_timeout_plugin.timeout_manager:
+            custom_timeout = _custom_timeout_plugin.timeout_manager.get_remaining_time(
+            )
+    except (ImportError, AttributeError):
+        pass
+
+    # 优先使用自定义超时，其次使用原始逻辑
+    if custom_timeout is not None:
+        actual_timeout = custom_timeout
+    else:
+        actual_timeout = get_pytest_timeout(timeout)
+
     with popen(*popenargs,
                start_new_session=start_new_session,
                suppress_output_info=True,
@@ -240,7 +256,23 @@ def check_call(*popenargs, **kwargs):
 
 def check_output(*popenargs, timeout=None, start_new_session=True, **kwargs):
     print(f"Start subprocess with check_output({popenargs}, {kwargs})")
-    actual_timeout = get_pytest_timeout(timeout)
+
+    # 尝试获取自定义超时管理器
+    custom_timeout = None
+    try:
+        from .timeout_fixture import _custom_timeout_plugin
+        if _custom_timeout_plugin.timeout_manager:
+            custom_timeout = _custom_timeout_plugin.timeout_manager.get_remaining_time(
+            )
+    except (ImportError, AttributeError):
+        pass
+
+    # 优先使用自定义超时，其次使用原始逻辑
+    if custom_timeout is not None:
+        actual_timeout = custom_timeout
+    else:
+        actual_timeout = get_pytest_timeout(timeout)
+
     with Popen(*popenargs,
                stdout=subprocess.PIPE,
                start_new_session=start_new_session,
