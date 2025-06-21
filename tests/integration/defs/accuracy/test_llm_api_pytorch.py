@@ -1496,7 +1496,7 @@ class TestKanana_Instruct(LlmapiAccuracyTestHarness):
     @pytest.mark.skip_device_not_contain(["H20", "H100"])
     def test_auto_dtype(self):
         "RCCA: https://nvbugspro.nvidia.com/bug/5310520"
-        pytorch_config = dict(duse_cuda_graph=True,
+        pytorch_config = dict(use_cuda_graph=True,
                               cuda_graph_padding_enabled=True,
                               cuda_graph_max_batch_size=384)
         with LLM(self.MODEL_PATH, **pytorch_config,
