@@ -236,22 +236,43 @@ def main():
     args = parse_arguments()
     prompts = args.prompt if args.prompt else example_prompts
 
-    llm, sampling_params = setup_llm(args)
-    outputs = llm.generate(prompts, sampling_params)
+    llm = None
+    try:
+        llm, sampling_params = setup_llm(args)
+        outputs = llm.generate(prompts, sampling_params)
 
-    for i, output in enumerate(outputs):
-        prompt = output.prompt
-        generated_text = output.outputs[0].text
-        print(f"[{i}] Prompt: {prompt!r}, Generated text: {generated_text!r}")
-
-        if args.return_context_logits:
-            print(f"[{i}] Context logits: {output.context_logits}")
-        if args.return_generation_logits:
+        for i, output in enumerate(outputs):
+            prompt = output.prompt
+            generated_text = output.outputs[0].text
             print(
-                f"[{i}] Generation logits: {output.outputs[0].generation_logits}"
-            )
-        if args.logprobs:
-            print(f"[{i}] Logprobs: {output.outputs[0].logprobs}")
+                f"[{i}] Prompt: {prompt!r}, Generated text: {generated_text!r}")
+
+            if args.return_context_logits:
+                print(f"[{i}] Context logits: {output.context_logits}")
+            if args.return_generation_logits:
+                print(
+                    f"[{i}] Generation logits: {output.outputs[0].generation_logits}"
+                )
+            if args.logprobs:
+                print(f"[{i}] Logprobs: {output.outputs[0].logprobs}")
+    except Exception as e:
+        print(f"Error during execution: {e}")
+        raise
+    finally:
+        # Ensure LLM is properly shut down even if an exception occurs
+        if llm is not None:
+            try:
+                llm.shutdown()
+            except Exception as shutdown_e:
+                print(f"Warning: Error during LLM shutdown: {shutdown_e}")
+                # Force abort MPI session if shutdown fails
+                if hasattr(llm, 'mpi_session') and llm.mpi_session is not None:
+                    try:
+                        llm.mpi_session.abort()
+                    except Exception as abort_e:
+                        print(
+                            f"Warning: Error during MPI session abort: {abort_e}"
+                        )
 
 
 if __name__ == '__main__':
