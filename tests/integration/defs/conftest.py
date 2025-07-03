@@ -53,6 +53,13 @@ try:
 except ImportError:
     trt_environment = None
 
+try:
+    from mpi4py import MPI
+    MPI_AVAILABLE = True
+except ImportError:
+    MPI_AVAILABLE = False
+    MPI = None
+
 # TODO: turn off this when the nightly storage issue is resolved.
 DEBUG_CI_STORAGE = os.environ.get("DEBUG_CI_STORAGE", False)
 GITLAB_API_USER = os.environ.get("GITLAB_API_USER")
@@ -1841,6 +1848,31 @@ def skip_by_device_memory(request):
         if expected_memory > int(device_memory):
             pytest.skip(
                 f'Device memory {device_memory} is less than {expected_memory}')
+
+
+@pytest.fixture(autouse=True)
+def mpi_error_handler():
+    """Handle MPI errors gracefully to prevent pytest process termination."""
+    if not MPI_AVAILABLE:
+        yield
+        return
+
+    try:
+        yield
+    except MPI.Exception as e:
+        pytest.fail(f"MPI error occurred: {e}")
+    except RuntimeError as e:
+        if "MPI_ABORT" in str(e) or "MPI_ABORT was invoked" in str(e):
+            pytest.fail(f"MPI abort occurred: {e}")
+        else:
+            raise
+    except Exception as e:
+        # Handle other MPI-related errors that might cause process termination
+        if "MPI" in str(e) and ("abort" in str(e).lower()
+                                or "terminate" in str(e).lower()):
+            pytest.fail(f"MPI-related error occurred: {e}")
+        else:
+            raise
 
 
 def get_sm_version():
