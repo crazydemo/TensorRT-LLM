@@ -48,7 +48,9 @@ def test_llm_enc_dec_general(llm_venv, cmodel_dir, engine_dir, data_type,
                              use_attention_plugin, use_gemm_plugin,
                              enc_dec_example_root, enc_dec_model_root, tp_size,
                              pp_size, num_beams, compare_hf_fp32,
-                             use_paged_kv_cache, use_fp8, llm_datasets_root):
+                             use_paged_kv_cache, use_fp8, llm_datasets_root, get_timeout_from_marker):
+
+    import time
 
     world_size = tp_size * pp_size
 
@@ -59,11 +61,15 @@ def test_llm_enc_dec_general(llm_venv, cmodel_dir, engine_dir, data_type,
 
     skip_fp8_pre_ada(use_fp8)
 
+    total_timeout = get_timeout_from_marker
+    remaining_timeout = total_timeout
+
+    print(f"Timeout allocation - Total: {total_timeout}s (dynamic reclaim mode)")
+
     print("Locate model checkpoints in test storage...")
     tllm_model_name, model_ckpt_path = enc_dec_model_root
 
     print("Converting Encoder-Decoder model into binary format...")
-    # ckpt from llm_models/<model_name> --> cmodels/<model_name>/<dtype>
     model_name = tllm_model_name
     model_type = None
     if "t5" in model_name or "ul2" in model_name:
@@ -75,11 +81,9 @@ def test_llm_enc_dec_general(llm_venv, cmodel_dir, engine_dir, data_type,
     elif "wmt" in model_name:
         model_type = "nmt"
 
+    convert_start = time.time()
     if use_fp8:
         assert use_paged_kv_cache and use_attention_plugin
-        # a known apex huggingface bug for t5 only
-        # t5 only takes float32 in quantization loop
-        # https://github.com/huggingface/transformers/issues/34264
         converted_weight_dir = quantize_data(
             llm_venv,
             enc_dec_example_root,
@@ -91,8 +95,8 @@ def test_llm_enc_dec_general(llm_venv, cmodel_dir, engine_dir, data_type,
             pp_size=pp_size,
             kv_cache_dtype="fp8",
             batch_size=1,
-            calib_dataset=f"{llm_datasets_root}/cnn_dailymail")
-
+            calib_dataset=f"{llm_datasets_root}/cnn_dailymail",
+            timeout=remaining_timeout)
         enc_dec_engine_dir = f"{engine_dir}/{tllm_model_name}/{world_size}-gpu/fp8"
     else:
         converted_weight_dir = convert_weights(
@@ -104,15 +108,19 @@ def test_llm_enc_dec_general(llm_venv, cmodel_dir, engine_dir, data_type,
             data_type=data_type,
             tp_size=tp_size,
             pp_size=pp_size,
-            model_type=model_type)
-
+            model_type=model_type,
+            timeout=remaining_timeout)
         enc_dec_engine_dir = f"{engine_dir}/{tllm_model_name}/{world_size}-gpu/{data_type}"
+    convert_time = time.time() - convert_start
+    remaining_timeout -= convert_time
+    print(f"[timeout] convert phase used: {convert_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after convert phase!")
 
     print("Build engines...")
-
-    # change plugins precision to auto if testing fp8
     data_type = "auto" if use_fp8 else data_type
 
+    build_start = time.time()
     for component in ["encoder", "decoder"]:
         build_cmd = [
             "trtllm-build",
@@ -122,33 +130,24 @@ def test_llm_enc_dec_general(llm_venv, cmodel_dir, engine_dir, data_type,
             "--moe_plugin=disable",
             "--max_batch_size=8",
         ]
-
         if component == "encoder":
             build_cmd.append(f"--max_input_len=512")
         else:
             build_cmd.append(f"--max_input_len=1")
             build_cmd.append(f"--max_seq_len=201")
             build_cmd.append(f"--max_encoder_input_len=512")
-
         if use_paged_kv_cache and component == "decoder":
-            # paged_kv_cache only applies to decoder component
-            # As for now, we only support num_beams=1 for decoder paged kv cache in python runtime
             build_cmd.append(f"--paged_kv_cache=enable")
         else:
             build_cmd.append(f"--paged_kv_cache=disable")
-
         if use_gemm_plugin:
             build_cmd.append(f"--gemm_plugin={data_type}")
         else:
             build_cmd.append(f"--gemm_plugin=disable")
-
         if use_attention_plugin:
-            # TODO: remove skip after support bert_attention_plugin on B200
             build_cmd.append(f"--bert_attention_plugin={data_type}")
             build_cmd.append(f"--gpt_attention_plugin={data_type}")
             build_cmd.append("--remove_input_padding=enable")
-
-            # for non-T5 models, FP16/BF16
             if model_type == "t5" or data_type == "float32":
                 build_cmd.append("--context_fmha=disable")
             elif use_fp8:
@@ -157,12 +156,15 @@ def test_llm_enc_dec_general(llm_venv, cmodel_dir, engine_dir, data_type,
             build_cmd.append(f"--bert_attention_plugin=disable")
             build_cmd.append(f"--gpt_attention_plugin=disable")
             build_cmd.append("--remove_input_padding=disable")
-
-        check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
+        check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env, timeout=remaining_timeout)
+    build_time = time.time() - build_start
+    remaining_timeout -= build_time
+    print(f"[timeout] build phase used: {build_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after build phase!")
 
     print("Run inference...")
     if use_paged_kv_cache and pp_size == 1:
-        # use paged engines to cover ModelRunnerCpp tests
         run_cmd = [
             f"{enc_dec_example_root}/../../../run.py",
             f"--engine_dir={enc_dec_engine_dir}",
@@ -172,24 +174,24 @@ def test_llm_enc_dec_general(llm_venv, cmodel_dir, engine_dir, data_type,
             "--input_text='translate English to German: The house is wonderful.'",
         ]
     else:
-        # old Python runtime tests
         run_cmd = [
             f"{enc_dec_example_root}/run.py",
             f"--engine_dir={enc_dec_engine_dir}",
             f"--engine_name={model_name}",
-            f"--model_name={model_ckpt_path}",  # use ckpt path so we can use local copy rather than cloning from HF
-            "--max_new_tokens=24",  # shorter than 3rd example input length to capture any bug
+            f"--model_name={model_ckpt_path}",
+            "--max_new_tokens=24",
             f"--num_beams={num_beams}",
         ]
         if compare_hf_fp32:
             run_cmd.extend(["--compare_hf_fp32"])
 
+    infer_start = time.time()
     if world_size == 1:
-        venv_check_call(llm_venv, run_cmd)
+        venv_check_call(llm_venv, run_cmd, timeout=remaining_timeout)
     else:
         venv_mpi_check_call(
             llm_venv, ["mpirun", "-n",
-                       str(world_size), "--allow-run-as-root"], run_cmd)
+                       str(world_size), "--allow-run-as-root"], run_cmd, timeout=remaining_timeout)
 
 
 @pytest.mark.parametrize("use_fp8", [True, False],

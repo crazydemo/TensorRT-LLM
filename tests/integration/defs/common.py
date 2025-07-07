@@ -24,13 +24,13 @@ from packaging import version
 from .trt_test_alternative import check_call, check_output, exists, is_windows
 
 
-def venv_check_call(venv, cmd, env=None, **kwargs):
+def venv_check_call(venv, cmd, env=None, timeout=None, **kwargs):
 
     def _war_check_call(*args, **kwargs):
         kwargs["cwd"] = venv.get_working_directory()
         return check_call(*args, **kwargs)
 
-    venv.run_cmd(cmd, caller=_war_check_call, env=env, **kwargs)
+    venv.run_cmd(cmd, caller=_war_check_call, env=env, timeout=timeout, **kwargs)
 
 
 def venv_check_output(venv, cmd, env=None, **kwargs):
@@ -43,7 +43,7 @@ def venv_check_output(venv, cmd, env=None, **kwargs):
     return venv.run_cmd(cmd, caller=_war_check_output, env=env, **kwargs)
 
 
-def venv_mpi_check_call(venv, mpi_cmd, python_cmd):
+def venv_mpi_check_call(venv, mpi_cmd, python_cmd, timeout=None):
     """
     This function WAR check_call() to run python_cmd with mpi.
     If mpi_cmd = ["mpirun", "-n", "2"] and python_cmd = ["run.py"], the command will be:
@@ -60,7 +60,7 @@ def venv_mpi_check_call(venv, mpi_cmd, python_cmd):
         kwargs["cwd"] = venv.get_working_directory()
         return check_call(merged_cmd, **kwargs)
 
-    venv.run_cmd(python_cmd, caller=_war_check_call)
+    venv.run_cmd(python_cmd, caller=_war_check_call, timeout=timeout)
 
 
 def venv_mpi_check_output(venv, mpi_cmd, python_cmd, env=None):
@@ -506,6 +506,9 @@ def convert_weights(llm_venv,
     if per_group:
         convert_cmd.append("--per_group")
 
+    # Extract timeout from kwargs before processing other kwargs
+    timeout = kwargs.pop('timeout', None)
+    
     for key, value in kwargs.items():
         if isinstance(value, bool):
             if value:
@@ -514,7 +517,7 @@ def convert_weights(llm_venv,
             convert_cmd.extend([f"--{key}={value}"])
 
     if llm_venv:
-        venv_check_call(llm_venv, convert_cmd)
+        venv_check_call(llm_venv, convert_cmd, timeout=timeout)
         return model_dir
     else:
         return convert_cmd, model_dir
@@ -607,6 +610,9 @@ def quantize_data(llm_venv,
     if kv_cache_dtype:
         quantize_cmd.append(f"--kv_cache_dtype={kv_cache_dtype}")
 
+    # Extract timeout from kwargs before processing other kwargs
+    timeout = kwargs.pop('timeout', None)
+    
     for key, value in kwargs.items():
         if isinstance(value, bool):
             if value:
@@ -616,7 +622,7 @@ def quantize_data(llm_venv,
 
     if llm_venv:
         if not exists(output_dir):
-            venv_check_call(llm_venv, quantize_cmd)
+            venv_check_call(llm_venv, quantize_cmd, timeout=timeout)
         return output_dir
     else:
         return quantize_cmd, output_dir

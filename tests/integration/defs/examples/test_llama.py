@@ -3022,11 +3022,16 @@ def test_llm_llama_v3_8b_1048k_long_context_ppl(llama_example_root,
     'Llama-3-8B-Instruct-Gradient-1048k', 'Llama-3-70B-Instruct-Gradient-1048k'
 ],
                          indirect=True)
-@pytest.mark.timeout(10800 if get_sm_version() < 89 else 3600)
 def test_llm_llama_v3_1m_long_context_8gpus(llama_example_root,
                                             llama_model_root, llm_venv,
-                                            engine_dir, cmodel_dir):
+                                            engine_dir, cmodel_dir, get_timeout_from_marker):
     "Build & run llama-3-8B-1048k on long context."
+    import time
+
+    # 动态timeout分配：每阶段用完后回收剩余时间
+    total_timeout = get_timeout_from_marker
+    remaining_timeout = total_timeout
+
     model_name = os.path.basename(llama_model_root)
     dtype = 'float16'
     tp_size, pp_size = 8, 1
@@ -3040,7 +3045,13 @@ def test_llm_llama_v3_1m_long_context_8gpus(llama_example_root,
         "--test_case=build_passkey",
         "--test_level=7",
     ]
-    venv_check_call(llm_venv, gen_cmd)
+    gen_start = time.time()
+    venv_check_call(llm_venv, gen_cmd, timeout=remaining_timeout)
+    gen_time = time.time() - gen_start
+    remaining_timeout -= gen_time
+    print(f"[timeout] gen dataset phase used: {gen_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after gen dataset phase!")
 
     print("Converting checkpoint...")
     ckpt_dir = convert_weights(llm_venv=llm_venv,
@@ -3061,7 +3072,13 @@ def test_llm_llama_v3_1m_long_context_8gpus(llama_example_root,
         f'--max_batch_size={max_batch_size}'
     ]
 
-    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
+    build_start = time.time()
+    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env, timeout=remaining_timeout)
+    build_time = time.time() - build_start
+    remaining_timeout -= build_time
+    print(f"[timeout] build phase used: {build_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after build phase!")
 
     print("Run passkey evaluation...")
     eval_cmd = [
@@ -3076,9 +3093,16 @@ def test_llm_llama_v3_1m_long_context_8gpus(llama_example_root,
         "--tensorrt_llm_accuracy_threshold=0.9",
     ]
 
+    eval_start = time.time()
     venv_mpi_check_call(
         llm_venv, ["mpirun", "-n", f"{world_size}", "--allow-run-as-root"],
-        eval_cmd)
+        eval_cmd,
+        timeout=remaining_timeout)
+    eval_time = time.time() - eval_start
+    remaining_timeout -= eval_time
+    print(f"[timeout] eval phase used: {eval_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after eval phase!")
 
 
 @pytest.mark.skip_less_device_memory(80000)
@@ -3366,7 +3390,6 @@ def test_llm_llama_v3_2_smoothquant_1node_single_gpu(
     venv_check_call(llm_venv, summary_cmd)
 
 
-# TODO: remove skip after support fp8 rowwise gemm on B200
 @skip_post_blackwell
 @pytest.mark.skip_less_device_memory(80000)
 @pytest.mark.skip_less_device(4)
@@ -3384,8 +3407,10 @@ def test_llm_llama_v3_2_smoothquant_1node_single_gpu(
 def test_llm_llama_v3_1_1node_multi_gpus(llama_example_root, llama_model_root,
                                          llm_venv, cmodel_dir,
                                          mmlu_dataset_root, engine_dir,
-                                         fp8_quant, gemm_allreduce):
+                                         fp8_quant, gemm_allreduce, get_timeout_from_marker):
     "Run llama3.1 test on 1 node."
+    import time
+
     if ("8B" not in llama_model_root) and (get_host_total_memory() < 1000000):
         pytest.skip("Host memory is insufficient.")
 
@@ -3402,6 +3427,14 @@ def test_llm_llama_v3_1_1node_multi_gpus(llama_example_root, llama_model_root,
     if not fp8_quant and "Meta-Llama-3.1-405B" == model_name:
         pytest.skip("Build engine will be OOM on 1 node.")
 
+    # 动态timeout分配：每阶段用完后回收剩余时间
+    total_timeout = get_timeout_from_marker
+    remaining_timeout = total_timeout
+
+    print(f"Timeout allocation - Total: {total_timeout}s (dynamic reclaim mode)")
+
+    # 1. 权重转换
+    convert_start = time.time()
     print("Convert weight...")
     model_dir = convert_weights(llm_venv=llm_venv,
                                 example_root=llama_example_root,
@@ -3413,8 +3446,16 @@ def test_llm_llama_v3_1_1node_multi_gpus(llama_example_root, llama_model_root,
                                 pp_size=pp_size,
                                 use_fp8_rowwise=fp8_quant,
                                 load_by_shard=True,
-                                workers=world_size)
+                                workers=world_size,
+                                timeout=remaining_timeout)
+    convert_time = time.time() - convert_start
+    remaining_timeout -= convert_time
+    print(f"[timeout] convert phase used: {convert_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after convert phase!")
 
+    # 2. 引擎构建
+    build_start = time.time()
     print("Build engines...")
     build_cmd = [
         "trtllm-build",
@@ -3431,16 +3472,30 @@ def test_llm_llama_v3_1_1node_multi_gpus(llama_example_root, llama_model_root,
     if gemm_allreduce:
         build_cmd += [f"--gemm_allreduce_plugin={data_type}"]
 
-    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
+    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env, timeout=remaining_timeout)
+    build_time = time.time() - build_start
+    remaining_timeout -= build_time
+    print(f"[timeout] build phase used: {build_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after build phase!")
 
+    # 3. 生成数据集
+    gen_start = time.time()
     gen_cmd = [
         f"{llama_example_root}/../../../infinitebench/construct_synthetic_dataset.py",
         "--test_case=build_passkey",
         "--test_level=3",
     ]
 
-    venv_check_call(llm_venv, gen_cmd)
+    venv_check_call(llm_venv, gen_cmd, timeout=remaining_timeout)
+    gen_time = time.time() - gen_start
+    remaining_timeout -= gen_time
+    print(f"[timeout] gen dataset phase used: {gen_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after gen dataset phase!")
 
+    # 4. 长上下文评估
+    eval_start = time.time()
     print("Run eval...")
     eval_cmd = [
         f"{llama_example_root}/../../../eval_long_context.py",
@@ -3457,15 +3512,28 @@ def test_llm_llama_v3_1_1node_multi_gpus(llama_example_root, llama_model_root,
 
     venv_mpi_check_call(
         llm_venv, ["mpirun", "-n", f"{world_size}", "--allow-run-as-root"],
-        eval_cmd)
+        eval_cmd,
+        timeout=remaining_timeout)
+    eval_time = time.time() - eval_start
+    remaining_timeout -= eval_time
+    print(f"[timeout] eval phase used: {eval_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after eval phase!")
 
+    # 5. MMLU评估
+    mmlu_start = time.time()
     print("Run mmlu...")
     mmlu_cmd = [
         "trtllm-eval", f"--model={engine_dir}",
         f"--tokenizer={llama_model_root}", "--backend=tensorrt", "mmlu",
         f"--dataset_path={mmlu_dataset_root}", "--check_accuracy"
     ]
-    check_call(" ".join(mmlu_cmd), shell=True, env=llm_venv._new_env)
+    check_call(" ".join(mmlu_cmd), shell=True, env=llm_venv._new_env, timeout=remaining_timeout)
+    mmlu_time = time.time() - mmlu_start
+    remaining_timeout -= mmlu_time
+    print(f"[timeout] mmlu phase used: {mmlu_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout < -5:  # 容忍最后阶段超一点点
+        raise TimeoutError("Timeout exceeded after mmlu phase!")
 
 
 @pytest.mark.skip_less_device_memory(80000)

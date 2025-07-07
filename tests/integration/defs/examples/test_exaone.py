@@ -33,10 +33,19 @@ from defs.trt_test_alternative import check_call
 def test_llm_exaone_1gpu(data_type, exaone_example_root, llm_exaone_model_root,
                          llama_example_root, llm_datasets_root, llm_rouge_root,
                          llm_venv, cmodel_dir, engine_dir, num_beams,
-                         use_weight_only):
+                         use_weight_only, get_timeout_from_marker):
+
+    import time
+
+    total_timeout = get_timeout_from_marker
+    remaining_timeout = total_timeout
+
+    print(f"Timeout allocation - Total: {total_timeout}s (dynamic reclaim mode)")
 
     print("Build engines...")
     model_name = "exaone"
+
+    convert_start = time.time()
     model_dir = convert_weights(
         llm_venv=llm_venv,
         # NOTE
@@ -46,15 +55,27 @@ def test_llm_exaone_1gpu(data_type, exaone_example_root, llm_exaone_model_root,
         model=model_name,
         model_path=llm_exaone_model_root,
         data_type=data_type,
-        use_weight_only=use_weight_only)
+        use_weight_only=use_weight_only,
+        timeout=remaining_timeout)
+    convert_time = time.time() - convert_start
+    remaining_timeout -= convert_time
+    print(f"[timeout] convert phase used: {convert_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after convert phase!")
 
+    build_start = time.time()
     build_cmd = [
         "trtllm-build",
         f"--checkpoint_dir={model_dir}",
         f"--output_dir={engine_dir}",
         f"--max_beam_width={num_beams}",
     ]
-    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
+    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env, timeout=remaining_timeout)
+    build_time = time.time() - build_start
+    remaining_timeout -= build_time
+    print(f"[timeout] build phase used: {build_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after build phase!")
 
     rouge1_threshold = {
         1: 22,
@@ -75,7 +96,7 @@ def test_llm_exaone_1gpu(data_type, exaone_example_root, llm_exaone_model_root,
         num_beams=num_beams,
     )
 
-    venv_check_call(llm_venv, summary_cmd)
+    venv_check_call(llm_venv, summary_cmd, timeout=remaining_timeout)
 
 
 @pytest.mark.skip_less_device(2)
@@ -87,11 +108,23 @@ def test_llm_exaone_1gpu(data_type, exaone_example_root, llm_exaone_model_root,
                          indirect=True)
 def test_llm_exaone_2gpu(data_type, exaone_example_root, llm_exaone_model_root,
                          llama_example_root, llm_datasets_root, llm_rouge_root,
-                         llm_venv, cmodel_dir, engine_dir, num_beams):
+                         llm_venv, cmodel_dir, engine_dir, num_beams, get_timeout_from_marker):
+
+    import time
 
     tp_size = 2
+    
+    # 动态timeout分配：每阶段用完后回收剩余时间
+    total_timeout = get_timeout_from_marker
+    remaining_timeout = total_timeout
+
+    print(f"Timeout allocation - Total: {total_timeout}s (dynamic reclaim mode)")
+
     print("Build engines...")
     model_name = "exaone"
+    
+    # 1. 权重转换
+    convert_start = time.time()
     model_dir = convert_weights(
         llm_venv=llm_venv,
         # NOTE
@@ -102,13 +135,26 @@ def test_llm_exaone_2gpu(data_type, exaone_example_root, llm_exaone_model_root,
         model_path=llm_exaone_model_root,
         data_type=data_type,
         tp_size=tp_size,
-        pp_size=1)
+        pp_size=1,
+        timeout=remaining_timeout)
+    convert_time = time.time() - convert_start
+    remaining_timeout -= convert_time
+    print(f"[timeout] convert phase used: {convert_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after convert phase!")
 
+    # 2. 构建引擎
+    build_start = time.time()
     build_cmd = [
         "trtllm-build", f"--checkpoint_dir={model_dir}",
         f"--output_dir={engine_dir}", f"--max_beam_width={num_beams}"
     ]
-    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
+    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env, timeout=remaining_timeout)
+    build_time = time.time() - build_start
+    remaining_timeout -= build_time
+    print(f"[timeout] build phase used: {build_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after build phase!")
 
     print("Run summarize...")
     summary_cmd = generate_summary_cmd(
@@ -123,6 +169,9 @@ def test_llm_exaone_2gpu(data_type, exaone_example_root, llm_exaone_model_root,
         num_beams=num_beams,
     )
 
+    # 3. 推理/评估（多GPU）
+    infer_start = time.time()
     venv_mpi_check_call(llm_venv,
                         ["mpirun", "-n", f"{tp_size}", "--allow-run-as-root"],
-                        summary_cmd)
+                        summary_cmd,
+                        timeout=remaining_timeout)

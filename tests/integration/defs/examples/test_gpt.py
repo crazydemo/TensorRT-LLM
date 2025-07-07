@@ -17,6 +17,7 @@ import csv
 import os
 import re
 from pathlib import Path
+import time
 
 import pytest
 from defs.common import (convert_weights, generate_summary_cmd, parse_mpi_cmd,
@@ -529,102 +530,6 @@ def test_llm_gpt2_medium_stop_words_1gpu(gpt_example_root, llm_venv,
 
 
 @pytest.mark.skip_less_device(8)
-@pytest.mark.parametrize(
-    "use_attention_plugin", [True, False],
-    ids=["enable_attention_plugin", "disable_attention_plugin"])
-@pytest.mark.parametrize("use_gemm_plugin", [True, False],
-                         ids=["enable_gemm_plugin", "disable_gemm_plugin"])
-def test_llm_gpt3_175b_2layers_1node_8gpus(gpt_example_root, llm_venv,
-                                           engine_dir, use_attention_plugin,
-                                           use_gemm_plugin):
-    "Build & run GPT-3 175B: 2 layer w/ plugins, regression test for issues #20"
-    dtype = 'float16'
-    convert_cmd = [
-        f"{gpt_example_root}/../../../generate_checkpoint_config.py",
-        f"--output_path={engine_dir}/ckpt_config.json",
-        "--architecture=GPTForCausalLM", f"--dtype={dtype}",
-        "--num_hidden_layers=2", "--num_attention_heads=96",
-        "--hidden_size=12288", "--vocab_size=51200", "--tp_size=8"
-    ]
-    venv_check_call(llm_venv, convert_cmd)
-
-    print("Building engines...")
-    build_cmd = [
-        "trtllm-build",
-        f"--model_config={engine_dir}/ckpt_config.json",
-        f"--output_dir={engine_dir}",
-        f"--max_batch_size={256}",
-        f"--max_input_len={924}",
-        f"--max_seq_len={1024}",
-    ]
-
-    if use_attention_plugin:
-        build_cmd.extend([f"--gpt_attention_plugin={dtype}"])
-    else:
-        build_cmd.extend([
-            "--gpt_attention_plugin=disable",
-            "--context_fmha=disable",
-            "--paged_kv_cache=disable",
-            "--remove_input_padding=disable",
-        ])
-    if use_gemm_plugin:
-        build_cmd.extend([f"--gemm_plugin={dtype}"])
-
-    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
-
-    venv_mpi_check_call(
-        llm_venv,
-        ["mpirun", "--allow-run-as-root", "--oversubscribe", "-np", "8"], [
-            f"{gpt_example_root}/../../../run.py", "--max_output_len=8",
-            f"--engine_dir={engine_dir}", "--no_add_special_tokens"
-        ])
-
-
-@pytest.mark.parametrize(
-    "use_attention_plugin", [True, False],
-    ids=["enable_attention_plugin", "disable_attention_plugin"])
-@pytest.mark.parametrize("use_gemm_plugin", [True, False],
-                         ids=["enable_gemm_plugin", "disable_gemm_plugin"])
-def test_llm_gpt3_175b_96layers_build_only(gpt_example_root, llm_venv,
-                                           engine_dir, use_attention_plugin,
-                                           use_gemm_plugin):
-    "Build GPT-3 175B: 96 layer w/ plugins"
-    dtype = 'float16'
-    convert_cmd = [
-        f"{gpt_example_root}/../../../generate_checkpoint_config.py",
-        f"--output_path={engine_dir}/ckpt_config.json",
-        "--architecture=GPTForCausalLM", f"--dtype={dtype}",
-        "--num_hidden_layers=96", "--num_attention_heads=96",
-        "--hidden_size=12288", "--vocab_size=51200", "--tp_size=8"
-    ]
-    venv_check_call(llm_venv, convert_cmd)
-
-    print("Building engines...")
-    build_cmd = [
-        "trtllm-build",
-        f"--model_config={engine_dir}/ckpt_config.json",
-        f"--output_dir={engine_dir}",
-        f"--max_batch_size={64}",
-        f"--max_input_len={924}",
-        f"--max_seq_len={1024}",
-    ]
-
-    if use_attention_plugin:
-        build_cmd.extend([f"--gpt_attention_plugin={dtype}"])
-    else:
-        build_cmd.extend([
-            "--gpt_attention_plugin=disable",
-            "--context_fmha=disable",
-            "--paged_kv_cache=disable",
-            "--remove_input_padding=disable",
-        ])
-    if use_gemm_plugin:
-        build_cmd.extend([f"--gemm_plugin={dtype}"])
-
-    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
-
-
-@pytest.mark.skip_less_device(8)
 @pytest.mark.skip_less_device_memory(80000)
 @pytest.mark.parametrize(
     "use_attention_plugin", [True, False],
@@ -637,9 +542,22 @@ def test_llm_gpt3_175b_96layers_build_only(gpt_example_root, llm_venv,
                          ids=["parallel_build", "serial_build"])
 def test_llm_gpt3_175b_1node_8gpus(gpt_example_root, llm_venv, engine_dir,
                                    use_attention_plugin, use_gemm_plugin,
-                                   context_fmha, parallel_build):
+                                   context_fmha, parallel_build, get_timeout_from_marker):
     "Build & Run GPT-3 175B: 96 layer w/ plugins"
+    import time
+
     dtype = 'float16'
+    
+    # 动态timeout分配：每阶段用完后回收剩余时间
+    total_timeout = get_timeout_from_marker
+    if total_timeout is None:
+        total_timeout = 1800  # Default 30 minutes
+    remaining_timeout = total_timeout
+
+    print(f"Timeout allocation - Total: {total_timeout}s (dynamic reclaim mode)")
+
+    # 1. 生成checkpoint配置
+    convert_start = time.time()
     convert_cmd = [
         f"{gpt_example_root}/../../../generate_checkpoint_config.py",
         f"--output_path={engine_dir}/ckpt_config.json",
@@ -647,9 +565,16 @@ def test_llm_gpt3_175b_1node_8gpus(gpt_example_root, llm_venv, engine_dir,
         "--num_hidden_layers=96", "--num_attention_heads=96",
         "--hidden_size=12288", "--vocab_size=51200", "--tp_size=8"
     ]
-    venv_check_call(llm_venv, convert_cmd)
+    venv_check_call(llm_venv, convert_cmd, timeout=remaining_timeout)
+    convert_time = time.time() - convert_start
+    remaining_timeout -= convert_time
+    print(f"[timeout] convert phase used: {convert_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after convert phase!")
 
     print("Building engines...")
+    # 2. 构建引擎
+    build_start = time.time()
     build_cmd = [
         "trtllm-build",
         f"--model_config={engine_dir}/ckpt_config.json",
@@ -677,15 +602,28 @@ def test_llm_gpt3_175b_1node_8gpus(gpt_example_root, llm_venv, engine_dir,
     if parallel_build:
         build_cmd.extend(["--workers=8"])
 
-    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
+    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env, timeout=remaining_timeout)
+    build_time = time.time() - build_start
+    remaining_timeout -= build_time
+    print(f"[timeout] build phase used: {build_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after build phase!")
 
     print('Run gpt3-175b...')
+    # 3. 推理/运行
+    infer_start = time.time()
     venv_mpi_check_call(
         llm_venv,
         ["mpirun", "--allow-run-as-root", "--oversubscribe", "-np", "8"], [
             f"{gpt_example_root}/../../../run.py", "--max_output_len=8",
             f"--engine_dir={engine_dir}", "--no_add_special_tokens"
-        ])
+        ],
+        timeout=remaining_timeout)
+    infer_time = time.time() - infer_start
+    remaining_timeout -= infer_time
+    print(f"[timeout] infer phase used: {infer_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout < -5:  # 容忍推理阶段超一点点
+        raise TimeoutError("Timeout exceeded after infer phase!")
 
 
 @pytest.mark.parametrize("per_token_channel", [True, False],

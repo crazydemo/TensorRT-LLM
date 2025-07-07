@@ -200,12 +200,12 @@ def hf_gemma_quantization_1gpu(batch_size,
 def test_llm_gemma_1gpu_summary_vswa(batch_size, data_type, gemma_model_root,
                                      llm_venv, cmodel_dir, engine_dir,
                                      gemma_example_root, llm_datasets_root,
-                                     llm_rouge_root, test_case):
+                                     llm_rouge_root, test_case, get_timeout_from_marker):
     max_attention_window = VSWA_ATTENTION[Path(gemma_model_root).stem]
     gemma_1gpu_summary(batch_size, data_type, gemma_model_root, llm_venv,
                        cmodel_dir, engine_dir, gemma_example_root,
                        llm_datasets_root, llm_rouge_root, test_case,
-                       max_attention_window)
+                       max_attention_window, get_timeout_from_marker)
 
 
 @pytest.mark.parametrize("batch_size", [8])
@@ -227,14 +227,15 @@ def test_llm_gemma_1gpu_summary_vswa(batch_size, data_type, gemma_model_root,
 def test_llm_gemma_1gpu_summary(batch_size, data_type, gemma_model_root,
                                 llm_venv, cmodel_dir, engine_dir,
                                 gemma_example_root, llm_datasets_root,
-                                llm_rouge_root, test_case):
+                                llm_rouge_root, test_case, get_timeout_from_marker):
     if "27b" in gemma_model_root and "GH200" in get_gpu_device_list(
     )[0] and "other" in test_case:
         pytest.skip("OOM on GH200. https://nvbugs/5250460")
 
     gemma_1gpu_summary(batch_size, data_type, gemma_model_root, llm_venv,
                        cmodel_dir, engine_dir, gemma_example_root,
-                       llm_datasets_root, llm_rouge_root, test_case)
+                       llm_datasets_root, llm_rouge_root, test_case,
+                       get_timeout_from_marker=get_timeout_from_marker)
 
 
 def gemma_1gpu_summary(batch_size,
@@ -247,8 +248,11 @@ def gemma_1gpu_summary(batch_size,
                        llm_datasets_root,
                        llm_rouge_root,
                        test_case,
-                       max_attention_window: list[int] | None = None):
+                       max_attention_window: list[int] | None = None,
+                       get_timeout_from_marker=None):
     "run gemm test on 1 gpu"
+    import time
+
     skip_fp8_pre_ada(use_fp8=test_case == "fp8_kv_cache")
     if "smooth_quant" in test_case and "bfloat16" in data_type:
         pytest.skip("TensorRT-LLM does not support SmoothQuant with bfloat16.")
@@ -257,11 +261,21 @@ def gemma_1gpu_summary(batch_size,
            ["gemma-7b", "9b", "27b"]) and get_device_memory() < 50000:
         pytest.skip(f"Insufficient device memory for {gemma_model_root}.")
 
+    # 动态timeout分配：每阶段用完后回收剩余时间
+    total_timeout = get_timeout_from_marker
+    if total_timeout is None:
+        total_timeout = 1800  # Default 30 minutes
+    remaining_timeout = total_timeout
+
+    print(f"Timeout allocation - Total: {total_timeout}s (dynamic reclaim mode)")
+
     ckpt_type = get_ckpt_type(gemma_model_root)
     ckpt_dir = get_ckpt_dir(gemma_model_root)
     vocab_file = get_vocab_file(gemma_model_root)
 
     print("Convert checkpoint ...")
+    # 1. 权重转换
+    convert_start = time.time()
     convert_cmd = [
         f"{gemma_example_root}/convert_checkpoint.py",
         f"--ckpt-type={ckpt_type}",
@@ -289,9 +303,16 @@ def gemma_1gpu_summary(batch_size,
     elif 'wo_int8' in test_case:
         convert_cmd.append("--use-weight-only-with-precision=int8")
 
-    venv_check_call(llm_venv, convert_cmd)
+    venv_check_call(llm_venv, convert_cmd, timeout=remaining_timeout)
+    convert_time = time.time() - convert_start
+    remaining_timeout -= convert_time
+    print(f"[timeout] convert phase used: {convert_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after convert phase!")
 
     print("Build engines...")
+    # 2. 构建引擎
+    build_start = time.time()
     build_cmd = [
         "trtllm-build",
         f"--checkpoint_dir={cmodel_dir}",
@@ -304,7 +325,12 @@ def gemma_1gpu_summary(batch_size,
         "--max_seq_len=3100",
     ]
 
-    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env)
+    check_call(" ".join(build_cmd), shell=True, env=llm_venv._new_env, timeout=remaining_timeout)
+    build_time = time.time() - build_start
+    remaining_timeout -= build_time
+    print(f"[timeout] build phase used: {build_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout <= 0:
+        raise TimeoutError("Timeout exceeded after build phase!")
 
     window = {
         'max_attention_window_size': max_attention_window
@@ -328,7 +354,14 @@ def gemma_1gpu_summary(batch_size,
     else:
         summary_cmd.append(f"--vocab_file={vocab_file}")
 
-    venv_check_call(llm_venv, summary_cmd)
+    # 3. 推理/评估
+    infer_start = time.time()
+    venv_check_call(llm_venv, summary_cmd, timeout=remaining_timeout)
+    infer_time = time.time() - infer_start
+    remaining_timeout -= infer_time
+    print(f"[timeout] infer phase used: {infer_time:.1f}s, remaining: {remaining_timeout:.1f}s")
+    if remaining_timeout < -5:  # 容忍推理阶段超一点点
+        raise TimeoutError("Timeout exceeded after infer phase!")
 
 
 @pytest.mark.parametrize("batch_size", [8])

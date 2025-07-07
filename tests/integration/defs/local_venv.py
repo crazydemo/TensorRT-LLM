@@ -103,6 +103,7 @@ class PythonVenvRunnerImpl(PythonRunnerInterface):
                 caller=check_call,
                 env=None,
                 print_script=True,
+                timeout=None,
                 **kwargs):
         """Call <python-exe> <args> on the command-line (can be used to run Python script files)."""
         if not os.path.exists(self.workspace):
@@ -120,11 +121,12 @@ class PythonVenvRunnerImpl(PythonRunnerInterface):
                                     env=new_env,
                                     check=True,
                                     capture_output=True,
+                                    timeout=timeout,
                                     **kwargs)
             return result.stdout.decode('utf-8')
         else:
-            print(f"Start subprocess with {caller}({call_args}, env={new_env})")
-            return caller(call_args, env=new_env, **kwargs)
+            print(f"Start subprocess with {caller}({call_args}, env={new_env}, timeout={timeout})")
+            return caller(call_args, env=new_env, timeout=timeout, **kwargs)
 
     def install_packages(self, packages):
         """Install Python packages by name."""

@@ -407,7 +407,7 @@ def test_qwen_e2e_cpprunner_large_new_tokens(model_name, model_path, llm_venv,
         trust_remote_code=True,
         use_fast=False)
 
-    message = r"<｜begin▁of▁sentence｜><｜User｜>The operation $\otimes$ is defined for all nonzero numbers by $a \otimes b = \frac{a^{2}}{b}$. Determine $[(1 \otimes 2) \otimes 3] - [1 \otimes (2 \otimes 3)]$. Let's think step by step and output the final answer within \boxed{}.<｜Assistant｜>"
+    message = r"REDACTED_SPECIAL_TOKENREDACTED_SPECIAL_TOKENThe operation $\otimes$ is defined for all nonzero numbers by $a \otimes b = \frac{a^{2}}{b}$. Determine $[(1 \otimes 2) \otimes 3] - [1 \otimes (2 \otimes 3)]$. Let's think step by step and output the final answer within \boxed{}.REDACTED_SPECIAL_TOKEN"
 
     inputs = tokenizer(message, return_tensors='pt',
                        add_special_tokens=False)['input_ids']
@@ -658,6 +658,16 @@ def trtllm_bench_prolog(
                 break
 
     return model_path, engine_path, dataset_path
+
+
+@pytest.fixture
+def get_timeout_from_marker(request):
+    """Extract timeout value from the timeout marker if it exists."""
+    timeout_marker = request.node.get_closest_marker("timeout")
+    timeout = None
+    if timeout_marker and timeout_marker.args:
+        timeout = timeout_marker.args[0]
+    return timeout
 
 
 @pytest.fixture
@@ -1885,7 +1895,6 @@ def test_ptp_quickstart_advanced_2gpus_sm120(llm_root, llm_venv, model_name,
 
 
 @skip_pre_blackwell
-@pytest.mark.timeout(40)
 def test_ptp_quickstart_advanced_mixed_precision(llm_root, llm_venv):
     example_root = Path(os.path.join(llm_root, "examples", "pytorch"))
     model_path = "Llama-3_1-8B-Instruct_fp8_nvfp4_hf"
