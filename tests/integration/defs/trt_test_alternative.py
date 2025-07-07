@@ -209,6 +209,7 @@ def call(*popenargs,
     if not suppress_output_info:
         print(f"Start subprocess with call({popenargs}, {kwargs})")
     actual_timeout = get_pytest_timeout(timeout)
+    print(f"[DEBUG] actual_timeout: {actual_timeout} in call")
     with popen(*popenargs,
                start_new_session=start_new_session,
                suppress_output_info=True,
@@ -324,23 +325,56 @@ def check_call_negative_test(*popenargs, **kwargs):
 
 
 def get_pytest_timeout(timeout=None):
+    execution_timeout_ratio = 0.8
     try:
         import pytest
+        current_item = None
         marks = None
+        
+        # Try to get the current pytest item
         try:
-            current_item = pytest.current_test
-            if hasattr(current_item, 'iter_markers'):
-                marks = list(current_item.iter_markers('timeout'))
-        except (AttributeError, NameError):
+            current_item = pytest.Item._get_current_item()
+            print(f"[DEBUG] current_item: {current_item}")
+        except Exception:
             pass
-
+        
+        # Check for timeout markers on the current item
+        if current_item and hasattr(current_item, 'iter_markers'):
+            try:
+                marks = list(current_item.iter_markers('timeout'))
+            except Exception as e:
+                pass
+        
         if marks and len(marks) > 0:
             timeout_mark = marks[0]
-            timeout_pytest = timeout_mark.args[0] if timeout_mark.args else None
-            if timeout_pytest and isinstance(timeout_pytest, (int, float)):
-                return max(30, int(timeout_pytest * 0.9))
+            timeout = timeout_mark.args[0] if timeout_mark.args else None
+            if timeout and isinstance(timeout, (int, float)):
+                result = max(30, int(timeout * execution_timeout_ratio))
+                return result
+        
+        # Try to get config from current item
+        config = None
+        if current_item and hasattr(current_item, 'config'):
+            config = current_item.config
+        
+        if config is None:
+            import sys
+            for i, arg in enumerate(sys.argv):
+                if arg == '--timeout' and i + 1 < len(sys.argv):
+                    try:
+                        timeout = int(sys.argv[i + 1])
+                    except ValueError:
+                       pass
+                elif arg.startswith('--timeout='):
+                    try:
+                        timeout = int(arg.split('=', 1)[1])
+                    except ValueError:
+                        pass
+        if timeout and isinstance(timeout, (int, float)):
+            result = max(30, int(timeout * execution_timeout_ratio))
+            return result
 
     except (ImportError, Exception) as e:
-        print(f"Error getting pytest timeout: {e}")
+        pass
 
     return timeout

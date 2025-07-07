@@ -1885,6 +1885,7 @@ def test_ptp_quickstart_advanced_2gpus_sm120(llm_root, llm_venv, model_name,
 
 
 @skip_pre_blackwell
+@pytest.mark.timeout(40)
 def test_ptp_quickstart_advanced_mixed_precision(llm_root, llm_venv):
     example_root = Path(os.path.join(llm_root, "examples", "pytorch"))
     model_path = "Llama-3_1-8B-Instruct_fp8_nvfp4_hf"
