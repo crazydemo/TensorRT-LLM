@@ -2015,26 +2015,27 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     uts = []
     ids = []
     for line in lines:
-        if line.startswith("unittest/"):
-            if " TIMEOUT " in line:
-                # Process for marker TIMEOUT
-                case_part, timeout_part = line.split(" TIMEOUT ", 1)
-                case = case_part.strip()
-                timeout_str = timeout_part.strip()
-                timeout_num_match = re.search(r'\(?(\d+)\)?', timeout_str)
-                if timeout_num_match:
-                    timeout_min = int(timeout_num_match.group(1))
-                    timeout_sec = timeout_min * 60
-                else:
-                    raise ValueError(
-                        f"Invalid TIMEOUT format: {timeout_str} in line: {line}"
-                    )
-                mark = pytest.mark.timeout(int(timeout_sec))
-                uts.append(pytest.param(case, marks=mark))
-                # Change back id to include timeout information
-                ids.append(f"{case} TIMEOUT {timeout_str}")
+        print(f"[DEBUG] line: {line}")
+        # if line.startswith("unittest/") or "integration/" in line:
+        if " TIMEOUT " in line:
+            # Process for marker TIMEOUT
+            case_part, timeout_part = line.split(" TIMEOUT ", 1)
+            case = case_part.strip()
+            timeout_str = timeout_part.strip()
+            timeout_num_match = re.search(r'\(?(\d+)\)?', timeout_str)
+            if timeout_num_match:
+                timeout_min = int(timeout_num_match.group(1))
+                timeout_sec = timeout_min * 60
             else:
-                uts.append(line.strip())
+                raise ValueError(
+                    f"Invalid TIMEOUT format: {timeout_str} in line: {line}"
+                )
+            mark = pytest.mark.timeout(int(timeout_sec))
+            uts.append(pytest.param(case, marks=mark))
+            # Change back id to include timeout information
+            ids.append(f"{case} TIMEOUT {timeout_str}")
+        else:
+            uts.append(line.strip())
     metafunc.parametrize("case", uts, ids=lambda x: x)
 
 
@@ -2091,6 +2092,12 @@ def pytest_collection_modifyitems(session, config, items):
 def pytest_configure(config):
     # avoid thread leak of tqdm's TMonitor
     tqdm.tqdm.monitor_interval = 0
+    
+    # # Set PYTEST_TIMEOUT environment variable for subprocess access
+    # timeout_option = config.getoption("--timeout", default=None)
+    # if timeout_option:
+    #     os.environ["PYTEST_TIMEOUT"] = str(timeout_option)
+    #     print(f"[DEBUG] Set PYTEST_TIMEOUT environment variable to: {timeout_option}")
 
 
 def deselect_by_regex(regexp, items, test_prefix, config):
