@@ -58,7 +58,9 @@ class TestLlama3_1_8BInstruct(LlmapiAccuracyTestHarness):
             task.evaluate(llm)
 
     def test_guided_decoding(self):
-        llm = LLM(self.MODEL_PATH, guided_decoding_backend="xgrammar")
+        llm = LLM(self.MODEL_PATH,
+                  guided_decoding_backend="xgrammar",
+                  max_batch_size=128)
         with llm:
             task = JsonModeEval(self.MODEL_NAME)
             task.evaluate(llm)
