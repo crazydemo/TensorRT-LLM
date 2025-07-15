@@ -7,3 +7,4 @@ test_e2e.py::test_ptp_quickstart_advanced_deepseek_multi_nodes[DeepSeek-R1/DeepS
 test_e2e.py::test_ptp_quickstart_advanced_llama_multi_nodes[llama-3.3-models/Llama-3.3-70B-Instruct]
 test_e2e.py::test_ptp_quickstart_advanced_llama_multi_nodes[llama4-models/Llama-4-Maverick-17B-128E-Instruct]
 test_e2e.py::test_openai_multinodes_chat_tp16pp1
+accuracy/test_llm_api_pytorch.py::TestDeepSeekR1::test_nvfp4_8gpus[latency]
