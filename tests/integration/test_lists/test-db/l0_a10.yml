@@ -14,7 +14,7 @@ l0_a10:
       backend: pytorch
   tests:
   # ------------- PyTorch tests ---------------
-  - unittest/_torch/modeling/test_modeling_mistral.py
+  - unittest/_torch/modeling/test_modeling_mistral.py TIMEOUT (5)
   - unittest/_torch/modeling/test_modeling_pixtral.py
   - disaggregated/test_disaggregated.py::test_disaggregated_single_gpu_with_mpirun[TinyLlama-1.1B-Chat-v1.0]
   - disaggregated/test_disaggregated.py::test_disaggregated_single_gpu_with_mpirun_trt_backend[TinyLlama-1.1B-Chat-v1.0]
@@ -28,7 +28,7 @@ l0_a10:
   - test_e2e.py::test_trtllm_serve_lora_example
   - test_e2e.py::test_openai_misc_example[pytorch]
   - test_e2e.py::test_openai_reasoning[pytorch]
-  - test_e2e.py::test_openai_completions_example[pytorch]
+  - test_e2e.py::test_openai_completions_example[pytorch] TIMEOUT (2)
   - test_e2e.py::test_openai_chat_example[pytorch]
   - test_e2e.py::test_trtllm_bench_request_rate_and_concurrency[enable_concurrency-]
 - condition:
