@@ -27,6 +27,75 @@ from .accuracy_core import (GSM8K, MMLU, LlmapiAccuracyTestHarness,
                             get_accuracy_task)
 
 
+def disaggregated_subprocess(timeout_seconds=1800):
+    """
+    装饰器：自动将disaggregated serving测试包装到子进程中
+
+    Args:
+        timeout_seconds: 超时时间（秒）
+    """
+
+    def decorator(test_func):
+
+        def wrapper(*args, **kwargs):
+            import multiprocessing
+
+            def run_test_in_process():
+                # 在子进程中运行测试函数
+                return test_func(*args, **kwargs)
+
+            # 创建进程
+            process = multiprocessing.Process(target=run_test_in_process)
+
+            try:
+                print(f"Starting disaggregated serving test in subprocess...")
+                process.start()
+                print(f"Subprocess started with PID: {process.pid}")
+
+                # 等待进程完成，带超时
+                process.join(timeout=timeout_seconds)
+
+                if process.is_alive():
+                    print(f"⏰ Test timed out after {timeout_seconds} seconds")
+                    print(
+                        f"Terminating hanging subprocess (PID: {process.pid})..."
+                    )
+
+                    # 终止进程
+                    process.terminate()
+                    process.join(timeout=10)
+
+                    if process.is_alive():
+                        print("Force killing subprocess...")
+                        process.kill()
+                        process.join()
+
+                    pytest.fail(
+                        f"Test timed out after {timeout_seconds} seconds")
+                else:
+                    if process.exitcode == 0:
+                        print("✅ Disaggregated serving test passed")
+                    else:
+                        print(
+                            f"❌ Disaggregated serving test failed with exit code {process.exitcode}"
+                        )
+                        pytest.fail("Disaggregated serving test failed")
+
+            except Exception as e:
+                print(f"Error in subprocess: {e}")
+                if process.is_alive():
+                    process.terminate()
+                    process.join(timeout=5)
+                    if process.is_alive():
+                        process.kill()
+                        process.join()
+                pytest.fail(f"Test failed with error: {e}")
+
+        return wrapper
+
+    return decorator
+
+
 class Result(GenerationResultBase):
 
     def __init__(self, id: int, sampling_params: SamplingParams,
@@ -588,6 +657,7 @@ class TestGemma3_1BInstruct(LlmapiAccuracyTestHarness):
     MODEL_NAME = "google/gemma-3-1b-it"
     MODEL_PATH = f"{llm_models_root()}/gemma/gemma-3-1b-it/"
 
+    @disaggregated_subprocess(timeout_seconds=120)
     @pytest.mark.parametrize("overlap_scheduler", [False, True])
     def test_auto_dtype(self, overlap_scheduler):
         ctx_server_config = {
