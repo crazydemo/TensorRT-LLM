@@ -2432,6 +2432,7 @@ class TestNemotronUltra(LlmapiAccuracyTestHarness):
     @pytest.mark.parametrize("tp_size,pp_size,ep_size", [(8, 1, 1), (8, 1, 4),
                                                          (8, 1, 8)],
                              ids=["tp8", "tp8ep4", "tp8ep8"])
+    @pytest.mark.timeout(14400)
     def test_auto_dtype(self, cuda_graph, tp_size, pp_size, ep_size):
         with LLM(self.MODEL_PATH,
                  max_batch_size=32,
