@@ -165,16 +165,29 @@ class PeriodicJUnitXML:
             self.completed_tests += 1
             current_time = time.time()
 
-            # Flush if batch threshold reached OR time interval elapsed
+            # Check if this is a timeout or error that requires immediate save
+            is_timeout = False
+            if hasattr(report, 'longrepr') and report.longrepr:
+                longrepr_str = str(report.longrepr)
+                is_timeout = ('TimeoutError' in longrepr_str
+                              or 'pytest_timeout' in longrepr_str
+                              or 'Timeout' in longrepr_str)
+
+            # Flush if batch threshold reached OR time interval elapsed OR timeout
             should_flush_by_time = (current_time -
                                     self.last_save_time) >= self.time_interval
             should_flush_by_batch = self.completed_tests >= self.batch_size
+            should_flush_by_timeout = is_timeout
 
-            if should_flush_by_batch or should_flush_by_time:
+            if should_flush_by_batch or should_flush_by_time or should_flush_by_timeout:
                 if should_flush_by_batch:
                     self._log_info(
                         f"Completed {self.completed_tests} cases in the last "
                         f"{current_time - self.last_save_time:.0f} seconds")
+                elif should_flush_by_timeout:
+                    self._log_warning(
+                        f"Timeout detected, flushing {self.completed_tests} test results..."
+                    )
                 # Reset counters before generating
                 self.completed_tests = 0
                 self.last_save_time = current_time
