@@ -18,7 +18,7 @@ from .trt_test_alternative import print_info, print_warning
 
 # from misc.reorder_venv_tests import reorder_tests
 
-kVALID_TEST_LIST_MARKERS = ["XFAIL", "SKIP", "UNSTABLE", "TIMEOUT"]
+kVALID_TEST_LIST_MARKERS = ["XFAIL", "SKIP", "UNSTABLE", "TIMEOUT", "ISOLATION"]
 record_invalid_tests = True
 
 kSTRIP_PARENS_PAT = re.compile(r'\((.*?)\)')
@@ -650,6 +650,9 @@ def modify_by_test_list(test_list, items, config):
             if marker:
                 if marker == "TIMEOUT" and timeout:
                     item.add_marker(pytest.mark.timeout(timeout))
+                elif marker == "ISOLATION":
+                    # Apply forked marker for process isolation
+                    item.add_marker(pytest.mark.forked)
                 else:
                     mark_func = getattr(pytest.mark, marker.lower())
                     mark = mark_func(reason=reason)
