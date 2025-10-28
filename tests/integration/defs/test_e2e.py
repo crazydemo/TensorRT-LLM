@@ -2872,4 +2872,226 @@ def test_ptp_quickstart_advanced_llama_multi_nodes(llm_root, llm_venv,
     check_call(" ".join(run_cmd), shell=True, env=llm_venv._new_env)
 
 
-# End of Pivot-To-Python examples
+@pytest.mark.timeout(7200)
+@pytest.mark.skip_less_device_memory(80000)
+@pytest.mark.skip_less_device(4)
+@pytest.mark.parametrize("eval_task", ["mmlu"])
+@pytest.mark.parametrize("tp_size,pp_size,ep_size", [(16, 1, 8), (8, 2, 8)],
+                         ids=["tp16", "tp8pp2"])
+@pytest.mark.parametrize("model_path", [
+    pytest.param('llama-3.3-models/Llama-3.3-70B-Instruct',
+                 marks=skip_pre_hopper),
+    pytest.param('llama4-models/Llama-4-Maverick-17B-128E-Instruct',
+                 marks=skip_pre_hopper),
+    pytest.param('llama4-models/nvidia/Llama-4-Maverick-17B-128E-Instruct-FP8',
+                 marks=skip_pre_hopper),
+    pytest.param('Qwen3/Qwen3-235B-A22B', marks=skip_pre_hopper),
+    pytest.param('Qwen3/saved_models_Qwen3-235B-A22B_nvfp4_hf',
+                 marks=skip_pre_blackwell),
+    pytest.param('DeepSeek-R1/DeepSeek-R1-0528-FP4', marks=skip_pre_blackwell),
+    pytest.param('Kimi-K2-Instruct',
+                 marks=(skip_pre_hopper, skip_post_blackwell)),
+    pytest.param('nemotron-nas/Llama-3_1-Nemotron-Ultra-253B-v1',
+                 marks=skip_pre_hopper),
+])
+def test_multi_nodes_eval(llm_venv, model_path, tp_size, pp_size, ep_size,
+                          eval_task, mmlu_dataset_root):
+    if "Llama-4" in model_path and tp_size == 16:
+        pytest.skip("Llama-4 with tp16 is not supported")
+
+    mmlu_threshold = 81.5
+    model_dir = f"{llm_models_root()}/{model_path}"
+    run_cmd = [
+        "trtllm-llmapi-launch",
+        "trtllm-eval",
+        f"--model={model_dir}",
+        f"--ep_size={ep_size}",
+        f"--tp_size={tp_size}",
+        f"--pp_size={pp_size}",
+        f"--kv_cache_free_gpu_memory_fraction={_MEM_FRACTION_80}",
+        "--max_batch_size=32",
+        "--backend=pytorch",
+    ]
+
+    if "Kimi" in model_path:
+        run_cmd.append("--trust_remote_code")
+    else:
+        run_cmd.append(f"--tokenizer={model_dir}")
+
+    run_cmd.extend([eval_task, f"--dataset_path={mmlu_dataset_root}"])
+
+    llm_venv._new_env["TRT_LLM_DISABLE_LOAD_WEIGHTS_IN_PARALLEL"] = "1"
+    output = check_output(" ".join(run_cmd), shell=True, env=llm_venv._new_env)
+
+    if os.environ.get("SLURM_PROCID", '0') == '0':
+        mmlu_accuracy = get_mmlu_accuracy(output)
+        assert mmlu_accuracy > mmlu_threshold, f"MMLU accuracy {mmlu_accuracy} is less than threshold {mmlu_threshold}"
+
+
+@pytest.mark.skip_less_device_memory(80000)
+@pytest.mark.parametrize("return_generation_logits", [True, False])
+@pytest.mark.parametrize("model_path", [
+    ("llama-3.1-model/Llama-3.1-8B-Instruct"),
+    pytest.param("llama-3.3-models/Llama-3.3-70B-Instruct",
+                 marks=pytest.mark.skip_less_device(8)),
+])
+def test_llmapi_generation_logits(llm_venv, model_path,
+                                  return_generation_logits):
+    """
+    RCCA: https://nvbugspro.nvidia.com/bug/5501805
+    """
+
+    import asyncio
+
+    from tensorrt_llm import LLM, SamplingParams
+
+    seq_len, max_tokens = 131072, 100000
+    if return_generation_logits:
+        # use short seq_len and max_tokens for testing when return_generation_logits is True
+        seq_len, max_tokens = 1024, 1000
+    tp_size = 8 if "70B" in model_path else 1
+    # Model parameters
+    params = {
+        "cuda_graph_config": {
+            "batch_sizes": [512]
+        },
+        "enable_chunked_prefill": True,
+        "guided_decoding_backend": "xgrammar",
+        "kv_cache_config": {
+            "cross_kv_cache_fraction": None,
+            "enable_block_reuse": False,
+            "free_gpu_memory_fraction": 0.9,
+            "max_attention_window": None
+        },
+        "max_seq_len": seq_len,
+        "tensor_parallel_size": tp_size,
+    }
+
+    # Sampling parameters
+    sampling_params = SamplingParams(
+        max_tokens=max_tokens,
+        return_context_logits=False,
+        return_generation_logits=return_generation_logits,
+    )
+
+    # Test prompt (token IDs)
+    prompt = [
+        128000, 128006, 9125, 128007, 271, 38766, 1303, 33025, 2696, 25, 6790,
+        220, 2366, 18, 198, 15724, 2696, 25, 220, 2545, 17907, 220, 2366, 20,
+        271, 67, 10319, 7422, 389, 128009, 128006, 882, 128007, 271, 3923, 374,
+        701, 836, 30, 128009, 128006, 78191, 128007, 271
+    ]
+
+    async def async_generation_test():
+        """Async generation test function"""
+        model_path_full = f"{llm_models_root()}/{model_path}"
+        llm = LLM(**params, model=model_path_full, tokenizer=model_path_full)
+
+        try:
+            outputs = []
+            async for output in llm.generate_async(
+                    prompt,
+                    sampling_params,
+                    streaming=True,
+            ):
+                outputs.append(output)
+                print(f"Generated: {output}")
+
+            # Verify that we got some output
+            assert len(outputs) > 0, "No output generated"
+            print(f"Successfully generated {len(outputs)} streaming outputs")
+
+        finally:
+            llm.shutdown()
+
+    # Run the async test
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(async_generation_test())
+
+
+@pytest.mark.skip_less_device(4)
+@pytest.mark.skip_less_device_memory(80000)
+@skip_pre_hopper
+@pytest.mark.parametrize("model_dir,draft_model_dir", [
+    ("modelopt-hf-model-hub/Llama-3.3-70B-Instruct-fp8",
+     "EAGLE3-LLaMA3.3-Instruct-70B"),
+    ("Qwen3/Qwen3-30B-A3B", "Qwen3/Qwen3-30B-eagle3"),
+    pytest.param("Qwen3/saved_models_Qwen3-235B-A22B_fp8_hf",
+                 "Qwen3/qwen3-235B-eagle3",
+                 marks=pytest.mark.skip_less_device_memory(140000)),
+    pytest.param("llama4-models/nvidia/Llama-4-Maverick-17B-128E-Instruct-FP8",
+                 "Llama-4-Maverick-17B-128E-Eagle3",
+                 marks=pytest.mark.skip_less_device_memory(140000)),
+    pytest.param("Qwen3/saved_models_Qwen3-235B-A22B_nvfp4_hf",
+                 "Qwen3/qwen3-235B-eagle3",
+                 marks=skip_pre_blackwell),
+])
+def test_eagle3_output_consistency_4gpus(model_dir: str, draft_model_dir: str):
+    """
+    RCCA: https://nvbugspro.nvidia.com/bug/5575211
+    """
+    from tensorrt_llm import LLM, SamplingParams
+    from tensorrt_llm.llmapi import (CudaGraphConfig, EagleDecodingConfig,
+                                     KvCacheConfig)
+
+    models_path = llm_models_root()
+    target_model_dir = f"{models_path}/{model_dir}"
+    eagle_model_dir = f"{models_path}/{draft_model_dir}"
+
+    # Common configuration matching the bug report
+    llm_common_config = {
+        "model":
+        target_model_dir,
+        "tensor_parallel_size":
+        4,
+        "moe_expert_parallel_size":
+        4,
+        "max_seq_len":
+        4096,
+        "max_batch_size":
+        8,
+        "max_num_tokens":
+        2048,
+        "disable_overlap_scheduler":
+        True,
+        "kv_cache_config":
+        KvCacheConfig(
+            free_gpu_memory_fraction=0.2,
+            enable_block_reuse=False,
+        ),
+        "cuda_graph_config":
+        CudaGraphConfig(),
+    }
+
+    # Test prompt
+    prompt = "Who are you?"
+    sampling_params = SamplingParams(max_tokens=1024, temperature=0)
+
+    # Run with Eagle3
+    spec_config = EagleDecodingConfig(
+        max_draft_len=3,
+        speculative_model_dir=eagle_model_dir,
+        eagle3_one_model=True,
+    )
+    llm_spec = LLM(**llm_common_config, speculative_config=spec_config)
+    results_spec = llm_spec.generate([prompt], sampling_params)
+    output_spec = results_spec[0].outputs[0].text
+    llm_spec.shutdown()
+
+    # Run without Eagle3 (baseline)
+    llm_ref = LLM(**llm_common_config)
+    results_ref = llm_ref.generate([prompt], sampling_params)
+    output_ref = results_ref[0].outputs[0].text
+    llm_ref.shutdown()
+
+    # Verify outputs match
+    assert output_spec == output_ref, (f"Eagle3 output differs from baseline!\n"
+                                       f"Eagle3: {output_spec[:200]}...\n"
+                                       f"Baseline: {output_ref[:200]}...")
+
+    # Additional check: no repetitive characters (like "!!!!!!")
+    import re
+    repetitive_pattern = re.compile(
+        r'(.)\1{10,}')  # Check for 10+ repeated chars
+    assert not repetitive_pattern.search(output_spec), (
+        f"Eagle3 output contains repetitive characters: {output_spec}")
