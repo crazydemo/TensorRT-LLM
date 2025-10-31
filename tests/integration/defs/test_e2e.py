@@ -2260,7 +2260,7 @@ def test_ptp_quickstart_advanced_deepseek_r1_w4afp8_8gpus(
 
 @pytest.mark.skip_less_device_memory(80000)
 @pytest.mark.parametrize("model_name,model_path,gpu_count", [
-    ("Llama3.1-70B-BF16", "llama-3.1-model/Meta-Llama-3.1-70B", 2),
+    ("Llama3.1-70B-BF16", "llama-3.1-model/Meta-Llama-3.1-70B", 8),
     ("Mixtral-8x7B-BF16", "Mixtral-8x7B-v0.1", 8),
     pytest.param('Llama3.1-70B-FP8',
                  'llama-3.1-model/Llama-3.1-70B-Instruct-FP8',
@@ -2291,7 +2291,7 @@ def test_ptp_quickstart_advanced_multi_gpus(llm_root, llm_venv, model_name,
         pytest.skip(f"Not enough GPUs for {model_name}")
     example_root = Path(os.path.join(llm_root, "examples", "llm-api"))
     mapping = {
-        "Llama3.1-70B-BF16": 91.0,
+        "Llama3.1-70B-BF16": 24.6,
         "Mixtral-8x7B-BF16": 16.5,
         "Llama3.1-70B-FP8": 58.5,
         "Llama3.1-405B-FP8": 63.2,
@@ -2316,6 +2316,40 @@ def test_ptp_quickstart_advanced_multi_gpus(llm_root, llm_venv, model_name,
         if model_name in mapping:
             _check_mem_usage(running_log, [mapping[model_name], 0, 0, 0],
                              gpu_count)
+
+
+@pytest.mark.skip_less_device_memory(80000)
+@pytest.mark.parametrize("cuda_graph", [False, True])
+@pytest.mark.parametrize("tp_size, pp_size", [
+    pytest.param(2, 2, marks=pytest.mark.skip_less_device(4)),
+    pytest.param(2, 4, marks=pytest.mark.skip_less_device(8)),
+])
+@pytest.mark.parametrize("model_name,model_path", [
+    pytest.param('Llama3.3-70B-FP8',
+                 'llama-3.3-models/Llama-3.3-70B-Instruct-FP8',
+                 marks=skip_pre_hopper),
+])
+def test_ptp_quickstart_advanced_pp_enabled(llm_root, llm_venv, model_name,
+                                            model_path, cuda_graph, tp_size,
+                                            pp_size):
+    print(f"Testing {model_name} on 8 GPUs.")
+    example_root = Path(os.path.join(llm_root, "examples", "llm-api"))
+    cmd = [
+        str(example_root / "quickstart_advanced.py"),
+        "--enable_chunked_prefill",
+        "--model_dir",
+        f"{llm_models_root()}/{model_path}",
+        f"--tp_size={tp_size}",
+        f"--pp_size={pp_size}",
+        "--moe_ep_size=1",
+        "--kv_cache_fraction=0.5",
+    ]
+    if cuda_graph:
+        cmd.extend([
+            "--use_cuda_graph",
+            "--cuda_graph_padding_enabled",
+        ])
+    llm_venv.run_cmd(cmd)
 
 
 @skip_pre_hopper
@@ -3096,6 +3130,8 @@ def test_ptp_quickstart_multimodal_2gpu(llm_root, llm_venv, model_name,
         # TODO: remove this once kv cache reuse is supported for Phi-4-multimodal
         cmd.append("--disable_kv_cache_reuse")
         cmd.append("Phi4MMForCausalLM")
+        # TODO: remove this once kv cache reuse is supported for Phi-4-multimodal
+        cmd.append("--disable_kv_cache_reuse")
     elif model_name == "mistral-small-3.1-24b-instruct":
         # TODO: remove this once kv cache reuse is supported for Mistral
         cmd.append("--disable_kv_cache_reuse")
@@ -3483,3 +3519,64 @@ def test_llmapi_generation_logits(llm_venv, model_path,
     # Run the async test
     loop = asyncio.get_event_loop()
     loop.run_until_complete(async_generation_test())
+
+
+@skip_pre_hopper
+@pytest.mark.skip_less_device_memory(80000)
+@pytest.mark.skip_less_device(4)
+def test_llama4_long_context_kv_cache_split_4gpus(llm_root, llm_venv):
+    """
+    RCCA: https://nvbugspro.nvidia.com/bug/5555681
+    """
+    import tempfile
+
+    from tensorrt_llm import LLM, SamplingParams
+
+    model_path = f"{llm_models_root()}/llama4-models/Llama-4-Scout-17B-16E-Instruct"
+    with tempfile.NamedTemporaryFile(mode='w+t',
+                                     suffix=".llama4_long_context.log",
+                                     dir="./",
+                                     delete=True,
+                                     delete_on_close=True) as running_log:
+        with LLM(
+                model_path,
+                tensor_parallel_size=4,
+                pipeline_parallel_size=1,
+                moe_expert_parallel_size=4,
+                max_seq_len=131072,  # 128k context to trigger potential overflow
+                max_num_tokens=8192,
+                enable_chunked_prefill=True,
+                kv_cache_config={"free_gpu_memory_fraction": 0.7}) as llm:
+
+            # Create a prompt that will exercise the long context path
+            # Use a reasonably long prompt that will be split across many blocks
+            long_prompt = "Summarize the following text: " + (
+                "Machine learning is a fascinating field of study. " * 1000)
+
+            sampling_params = SamplingParams(
+                max_tokens=128,
+                temperature=0.0,
+            )
+
+            # Test basic generation with long context
+            result = llm.generate(long_prompt, sampling_params=sampling_params)
+
+            # Verify output is generated successfully
+            assert len(result.outputs) > 0
+            output_text = result.outputs[0].text
+            assert len(output_text) > 0
+
+            # Check for repetitive/meaningless output caused by KV cache corruption
+            # Count max consecutive identical characters
+            max_repeat = max(
+                (sum(1 for _ in group)
+                 for char, group in __import__('itertools').groupby(output_text)
+                 ),
+                default=0)
+            assert max_repeat < 20, \
+                f"Found {max_repeat} consecutive identical characters, " \
+                f"suggesting KV cache corruption. Output: {output_text[:200]}"
+
+            print(
+                f"Successfully generated output with long context: {output_text[:100]}..."
+            )
