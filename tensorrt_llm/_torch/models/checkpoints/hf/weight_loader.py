@@ -81,12 +81,14 @@ class HfWeightLoader(BaseWeightLoader):
         """
         weights = {}
         pbar = tqdm.tqdm(total=len(weight_files), desc=description)
-
+        use_process_pool = bool(os.environ.get("TLLM_USE_PROCESS_POOL", "True"))
         # Note that the function is called with a tuple of arguments, hence we need to wrap the arguments in a tuple via [(w,) for w in weight_files]
         # specifically the comma right after the w is important to make it a tuple.
         run_concurrently(load_func, [(w, ) for w in weight_files],
                          reduce_func=weights.update,
-                         pbar=pbar)
+                         pbar=pbar,
+                         num_workers=num_workers,
+                         use_process_pool=use_process_pool)
 
         return weights
 

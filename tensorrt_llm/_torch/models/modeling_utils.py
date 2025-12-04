@@ -778,36 +778,32 @@ def run_concurrently(func,
                      args_list,
                      reduce_func=None,
                      pbar=None,
-                     num_workers=None):
+                     num_workers=None,
+                     use_process_pool=False):
     """
     Run a function concurrently with a list of arguments.
     func: the function to run concurrently.
     args_list: a list of tuples of arguments for the function.
     reduce_func: an optional function to reduce the results.
     pbar: an optional tqdm progress bar.
+    num_workers: the number of workers to use.
+    use_process_pool: whether to use a process pool instead of a thread pool.
     """
     from concurrent import futures
-    with futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-        # Submit all tasks
-        future_to_result = {
-            executor.submit(func, *arg): arg
-            for arg in args_list
-        }
-
-        # Process completed tasks as they finish
-        for result in futures.as_completed(future_to_result):
-            arg = future_to_result[result]
-            try:
-                part_weights = result.result()
-                if reduce_func:
-                    reduce_func(part_weights)
-                if pbar:
-                    pbar.update(1)
-            except Exception as e:
-                logger.error(
-                    f"Error executing {func.__name__} with args {arg}: {str(e)}"
-                )
-                raise
+    if use_process_pool:
+        executor = futures.ProcessPoolExecutor(max_workers=num_workers)
+    else:
+        executor = futures.ThreadPoolExecutor(max_workers=num_workers)
+    try:
+        for result in executor.map(func, args_list):
+            if reduce_func:
+                reduce_func(result)
+            if pbar:
+                pbar.update(1)
+    except Exception as e:
+        logger.error(
+            f"Error executing {func.__name__} with args {args_list}: {str(e)}")
+        raise
 
 
 def _load_weights_impl(model: Union[nn.Module, DecoderModelForCausalLM],
