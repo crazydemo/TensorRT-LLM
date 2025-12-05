@@ -81,7 +81,19 @@ class HfWeightLoader(BaseWeightLoader):
         """
         weights = {}
         pbar = tqdm.tqdm(total=len(weight_files), desc=description)
-        use_process_pool = bool(os.environ.get("TLLM_USE_PROCESS_POOL", "True"))
+
+        # Use ProcessPool to bypass GIL for CPU-intensive tensor creation
+        use_process_pool = os.environ.get(
+            "TLLM_USE_PROCESS_POOL", "1") in ["1", "True", "true", "yes", "y"]
+
+        # Calculate optimal worker count
+        # Upper limit: 32 to balance memory usage and performance (for 177 files × 4GB models)
+        num_workers = int(
+            os.environ.get(
+                "TLLM_WEIGHT_LOADER_WORKERS",
+                min(len(weight_files), 32)
+                if use_process_pool else None)) if os.environ.get(
+                    "TLLM_WEIGHT_LOADER_WORKERS") or use_process_pool else None
         # Note that the function is called with a tuple of arguments, hence we need to wrap the arguments in a tuple via [(w,) for w in weight_files]
         # specifically the comma right after the w is important to make it a tuple.
         run_concurrently(load_func, [(w, ) for w in weight_files],
