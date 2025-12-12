@@ -98,7 +98,7 @@ def gen_tp_pp_size(request):
 def worker(model_name: str, ctx_tp_pp_size: tuple, gen_tp_pp_size: tuple):
     extra_config = {
         "cache_transceiver_config": {
-            "backend": "UCX"
+            "backend": "default"
         },
         "kv_cache_config": {
             "free_gpu_memory_fraction": 0.5,
