@@ -466,3 +466,5 @@ examples/test_phi.py::test_phi_fp8_with_bf16_lora[phi-2] SKIP (https://nvbugs/57
 examples/test_phi.py::test_llm_phi_1node_2gpus_summary[Phi-3.5-MoE-instruct-nb:1] SKIP (https://nvbugs/5744293)
 examples/test_phi.py::test_llm_phi_quantization_1gpu[phi-2-fp8-bfloat16] SKIP (https://nvbugs/5744293)
 disaggregated/test_disaggregated.py::test_disaggregated_trtllm_sampler[TinyLlama-1.1B-Chat-v1.0] SKIP (https://nvbugs/5741884)
+accuracy/test_llm_api_pytorch.py::TestGPTOSS::test_eagle3_vswa_reuse_4gpus[one_model] SKIP (https://nvbugs/5756028)
+accuracy/test_llm_api_pytorch.py::TestGPTOSS::test_eagle3_vswa_reuse_4gpus[two_model] SKIP (https://nvbugs/5756028)
