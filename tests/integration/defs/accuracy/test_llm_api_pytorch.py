@@ -2396,6 +2396,33 @@ class TestDeepSeekR1(LlmapiAccuracyTestHarness):
             # task.evaluate(llm,
             #               extra_evaluator_kwargs=dict(apply_chat_template=True))
 
+        @skip_pre_blackwell
+        def test_nvfp4_4gpus_sm120_chunked_prefill(self):
+            "RCCA: https://nvbugspro.nvidia.com/bug/5698434"
+            kv_cache_config = KvCacheConfig(free_gpu_memory_fraction=0.90)
+            mtp_config = MTPDecodingConfig(num_nextn_predict_layers=2)
+            with LLM(f"{llm_models_root()}/DeepSeek-R1/DeepSeek-R1-0528-FP4-v2",
+                     max_batch_size=128,
+                     tensor_parallel_size=4,
+                     pipeline_parallel_size=1,
+                     moe_expert_parallel_size=4,
+                     kv_cache_config=kv_cache_config,
+                     speculative_config=mtp_config,
+                     enable_chunked_prefill=True,
+                     max_num_tokens=512) as llm:
+                assert llm.args.quant_config.quant_algo == QuantAlgo.NVFP4
+                task = MMLU(self.MODEL_NAME)
+                task.evaluate(llm)
+                task = GSM8K(self.MODEL_NAME)
+                task.evaluate(llm)
+                # This covers the case with relatively large seqlen in the generation phase.
+                task = CnnDailymail(self.MODEL_NAME)
+                task.evaluate(llm)
+                # Commented out because GPQA takes too long to run
+                # task = GPQADiamond(self.MODEL_NAME)
+                # task.evaluate(llm,
+            #               extra_evaluator_kwargs=dict(apply_chat_template=True))
+
     @skip_pre_blackwell
     @pytest.mark.parametrize(
         "tp_size,pp_size,ep_size,mtp_nextn,fp8kv,attention_dp,cuda_graph,overlap_scheduler,max_batch_size,moe_backend",
