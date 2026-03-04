@@ -807,6 +807,9 @@ examples/test_eagle.py::test_phi_eagle_1gpu[Phi-3-mini-128k-instruct-eagle2]
 examples/test_eagle.py::test_phi_eagle_1gpu[Phi-3-small-128k-instruct-eagle2]
 examples/test_eagle.py::test_phi_eagle_1gpu[Phi-3.5-mini-instruct-eagle2]
 
+unittest/llmapi/test_tokenizer_multinode.py::test_trust_remote_code_tokenizer_pickle_roundtrip_multinode
+
+# e2e serve test
 examples/serve/test_serve.py::test_config_file_loading[--extra_llm_api_options]
 examples/serve/test_serve.py::test_config_file_loading[--config]
 examples/serve/test_serve.py::test_env_overrides_pdl
