@@ -8,7 +8,7 @@ Generates:
   <output_dir>/models/TestXxx.md     - Per-model detail (data type x feature matrix)
 
 Usage:
-  python scripts/qa_coverage_analysis.py \\
+  python scripts/qa_accuracy_coverage_analysis.py \\
       --test-list tests/integration/test_lists/qa/llm_function_core.txt \\
       --output-dir coverage_report
 """
