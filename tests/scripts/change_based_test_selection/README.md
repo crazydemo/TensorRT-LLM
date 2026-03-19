@@ -1,4 +1,63 @@
-# Change-Based Test Selection Design Document
+# Change-Based Test Selection (CBTS)
+
+## 0. Problem Statement
+
+### Background
+
+TensorRT-LLM's QA integration test suite contains **600+ test cases** covering 15+ model architectures, dozens of opt-in features (speculative decoding, quantization, MoE, disaggregated serving, etc.), and multiple GPU configurations. A full run takes **100+ GPU-hours**.
+
+In a typical nightly CI cycle, only a fraction of the codebase changes between runs. Running every test every night wastes GPU resources and delays feedback — engineers wait hours for results, most of which are for code paths that weren't touched.
+
+### The Core Problem
+
+**How do we select the smallest subset of tests that still catches regressions introduced by today's changes?**
+
+This breaks down into several sub-problems:
+
+1. **Impact analysis** — Given a set of changed source files, which tests *could* be affected? A change to `modeling_llama.py` shouldn't trigger DeepSeek tests; a change to the core executor should trigger broad coverage.
+
+2. **Diminishing returns** — Many tests overlap in what they exercise. If we already selected 5 Llama tests covering FP8, beam search, and speculative decoding, the 6th Llama test with slightly different parameters adds marginal value.
+
+3. **Resource budgeting** — Even after smart selection, the candidate set may exceed the available GPU-hour budget. We need a principled way to trim without losing critical coverage.
+
+4. **Known failures** — Tests already tracked in `waives.txt` (known bugs under investigation) should not consume budget that could go to testing new/unknown regressions.
+
+5. **Maintenance drift** — As the codebase evolves (new models, new features, renamed files), the selection rules can silently go stale. We need automated detection of configuration drift.
+
+### Solution: Change-Based Test Selection
+
+CBTS maps source code changes to affected tests through a tiered impact rule system, then applies deduplication and budget trimming to produce a focused test list:
+
+```
+306 changed files  →  487 candidate tests  →  44 selected tests (7.1%, ~8h)
+     (full diff)        (impact analysis)       (dedup + budget)
+```
+
+### Deployment Model
+
+CBTS is intentionally kept **inside the TensorRT-LLM repository** (not in an external CI repo) because:
+
+- **Impact rules reference source paths directly** — `tensorrt_llm/_torch/models/modeling_llama*.py` must stay in sync with actual file locations. Same-repo means a PR that renames a file can update the rule in the same commit.
+- **Parser reads test definitions at repo HEAD** — test class attributes, parametrize decorators, and config classes are parsed from the same checkout.
+- **Maintenance warnings catch drift immediately** — when a new model is added without an impact rule, the next CBTS run flags it. In a separate repo, this would only be discovered after the fact.
+- **Developer self-service** — contributors adding new models or features can update `impact_rules.py` in the same PR, without needing access to a separate QA repo.
+
+The Jenkins CI pipeline only needs a single invocation:
+
+```bash
+python -m tests.scripts.change_based_test_selection.cli \
+    --base-ref $LAST_GOOD_SHA --test-list llm_function_core \
+    --time-budget 8h -o selected_tests.txt
+```
+
+### Intended Usage
+
+| Cadence | Strategy | Purpose |
+|---------|----------|---------|
+| **Nightly** | CBTS with 8h budget | Early regression detection with minimal GPU cost |
+| **Weekly** | Full test suite | Safety net — catches anything CBTS missed |
+
+---
 
 ## 1. Overall Pipeline
 
