@@ -27,6 +27,7 @@ Core logic:
   3. Union all results
 """
 
+import json
 import re
 import subprocess
 from dataclasses import dataclass, field
@@ -452,24 +453,57 @@ def _select_by_opt_in(database: dict[str, TestEntry],
 def _select_by_model(database: dict[str, TestEntry],
                       result: SelectionResult, rule: ImpactRule,
                       changed_file: str):
-    """MODEL tier: All tests for the given architecture."""
+    """MODEL tier: All tests for the given architecture.
+
+    Matches both:
+      - Class-based tests via entry.arch (from TESTCLASS_TO_ARCH)
+      - Module-level tests (e.g. test_e2e.py) via entry.model_names
+        mapped to arch using MODEL_NAME_TO_ARCH
+    """
+    from .impact_rules import model_name_to_arch
+
     arch = rule.arch
     for test_id, entry in database.items():
+        # Class-based match
         if entry.arch == arch:
             result.add(
                 test_id, entry,
                 f"MODEL arch={arch} ({rule.description}) <- {changed_file}")
+            continue
+
+        # Module-level match via model_names
+        if entry.model_names:
+            for mname in entry.model_names:
+                if model_name_to_arch(mname) == arch:
+                    result.add(
+                        test_id, entry,
+                        f"MODEL arch={arch} model={mname} "
+                        f"({rule.description}) <- {changed_file}")
+                    break
+
+
+@dataclass
+class _TestFileChanges:
+    """Result of analyzing which parts of a test file were changed."""
+
+    # Classes where we identified specific changed methods.
+    # class_name → set of changed method names.
+    class_methods: dict[str, set[str]] = field(default_factory=dict)
+    # Classes where we know the class changed but can't narrow to methods
+    # (e.g. class-level attribute change). Select all methods for these.
+    class_wide: set[str] = field(default_factory=set)
+    # True if we couldn't determine anything (select all from file).
+    select_all: bool = False
 
 
 def _get_changed_classes_in_test_file(changed_file: str,
-                                      base_ref: str = None) -> set[str]:
-    """Use git diff to identify which test classes were modified in a test file.
+                                      base_ref: str = None) -> _TestFileChanges:
+    """Use git diff to identify which test classes/methods were modified.
 
-    Parses the diff hunks to find class names near changed lines.
-    Returns empty set if we can't determine (meaning: select all).
+    Parses the diff hunks to find class and method names near changed lines.
+    Returns _TestFileChanges with method-level precision when possible.
     """
     if not base_ref:
-        # Try to get base_ref from the selector context; fall back to HEAD~1
         base_ref = "HEAD~1"
 
     try:
@@ -481,10 +515,10 @@ def _get_changed_classes_in_test_file(changed_file: str,
         )
         diff_output = result.stdout
     except subprocess.CalledProcessError:
-        return set()  # Can't get diff, select all
+        return _TestFileChanges(select_all=True)
 
     if not diff_output.strip():
-        return set()
+        return _TestFileChanges(select_all=True)
 
     # Parse @@ hunk headers to get changed line numbers
     changed_lines = set()
@@ -496,19 +530,20 @@ def _get_changed_classes_in_test_file(changed_file: str,
             changed_lines.add(line_num)
 
     if not changed_lines:
-        return set()
+        return _TestFileChanges(select_all=True)
 
-    # Read the file and build a line_number → enclosing_class map
+    # Read the file and build structural maps
     try:
         with open(changed_file) as f:
             source = f.read()
     except FileNotFoundError:
-        return set()
+        return _TestFileChanges(select_all=True)
+
+    lines = source.split('\n')
 
     # Find all class definitions and their line ranges
     class_ranges: list[tuple[str, int, int]] = []  # (name, start, end)
     class_pattern = re.compile(r'^class\s+(\w+)\s*[\(:]', re.MULTILINE)
-    lines = source.split('\n')
 
     class_starts = []
     for m in class_pattern.finditer(source):
@@ -520,26 +555,180 @@ def _get_changed_classes_in_test_file(changed_file: str,
             lines)
         class_ranges.append((name, start, end))
 
-    # Find which classes contain changed lines
-    changed_classes = set()
-    for name, start, end in class_ranges:
-        for line_num in changed_lines:
-            if start <= line_num <= end:
-                changed_classes.add(name)
-                break
+    # Find method definitions within each class: (class, method, start, end)
+    method_ranges: list[tuple[str, str, int, int]] = []
+    method_pattern = re.compile(r'^    def\s+(test_\w+)\s*\(', re.MULTILINE)
+    for cls_name, cls_start, cls_end in class_ranges:
+        cls_source = '\n'.join(lines[cls_start - 1:cls_end])
+        method_starts = []
+        for m in method_pattern.finditer(cls_source):
+            mline = cls_source[:m.start()].count('\n') + cls_start
+            method_starts.append((m.group(1), mline))
+        for j, (mname, mstart) in enumerate(method_starts):
+            mend = method_starts[j + 1][1] - 1 if j + 1 < len(method_starts) else cls_end
+            method_ranges.append((cls_name, mname, mstart, mend))
 
-    # Also detect changes outside any class (module-level helpers, imports)
+    # Build result: map changed lines → methods → classes
+    changes = _TestFileChanges()
+
+    for cls_name, cls_start, cls_end in class_ranges:
+        cls_changed_lines = {ln for ln in changed_lines
+                             if cls_start <= ln <= cls_end}
+        if not cls_changed_lines:
+            continue
+
+        # Find which methods within this class were changed
+        cls_methods = [
+            (mname, mstart, mend)
+            for cn, mname, mstart, mend in method_ranges
+            if cn == cls_name
+        ]
+
+        changed_methods = set()
+        class_level_lines = set(cls_changed_lines)
+
+        for mname, mstart, mend in cls_methods:
+            method_lines = {ln for ln in cls_changed_lines
+                            if mstart <= ln <= mend}
+            if method_lines:
+                changed_methods.add(mname)
+                class_level_lines -= method_lines
+
+        if class_level_lines:
+            # Lines changed outside any method (class attrs, decorators,
+            # class-level code) → select all methods in this class
+            changes.class_wide.add(cls_name)
+        elif changed_methods:
+            changes.class_methods[cls_name] = changed_methods
+
+    # Check for changes outside any class (module-level: imports, helpers)
     min_class_start = min((s for _, s, _ in class_ranges),
                           default=len(lines) + 1)
-    has_module_level_changes = any(ln < min_class_start
-                                  for ln in changed_lines)
+    module_level_changed_lines = {ln for ln in changed_lines
+                                  if ln < min_class_start}
 
-    if has_module_level_changes:
-        # Module-level changes (imports, helpers) could affect any test
-        # Return empty to signal "select all from this file"
+    if module_level_changed_lines:
+        callers = _classify_module_level_changes(
+            diff_output, module_level_changed_lines, lines, class_ranges)
+        if callers is None:
+            # Modification to existing shared code → select all
+            return _TestFileChanges(select_all=True)
+        # callers: classes that reference newly added symbols → class_wide
+        changes.class_wide.update(callers)
+
+    # If nothing was identified at all, fall back to select_all
+    if not changes.class_methods and not changes.class_wide:
+        return _TestFileChanges(select_all=True)
+
+    return changes
+
+
+def _classify_module_level_changes(
+    diff_output: str,
+    module_level_lines: set[int],
+    file_lines: list[str],
+    class_ranges: list[tuple[str, int, int]],
+) -> set[str] | None:
+    """Classify module-level diff hunks and determine affected classes.
+
+    Returns:
+        set[str]: class names that reference newly added/modified symbols.
+        None: if changes modify existing shared code (caller should select all).
+    """
+    # Parse hunks to get (old_count, new_start, new_count) per hunk
+    hunk_pattern = re.compile(
+        r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
+    # Collect added/removed lines per hunk from the raw diff
+    hunks: list[dict] = []
+    current_hunk = None
+    for line in diff_output.splitlines():
+        m = hunk_pattern.match(line)
+        if m:
+            if current_hunk is not None:
+                hunks.append(current_hunk)
+            old_count = int(m.group(2)) if m.group(2) else 1
+            new_start = int(m.group(3))
+            new_count = int(m.group(4)) if m.group(4) else 1
+            current_hunk = {
+                'old_count': old_count,
+                'new_start': new_start,
+                'new_count': new_count,
+                'added': [],
+                'removed': [],
+            }
+        elif current_hunk is not None:
+            if line.startswith('+') and not line.startswith('+++'):
+                current_hunk['added'].append(line[1:])
+            elif line.startswith('-') and not line.startswith('---'):
+                current_hunk['removed'].append(line[1:])
+    if current_hunk is not None:
+        hunks.append(current_hunk)
+
+    # Filter to hunks that touch module-level lines
+    module_hunks = []
+    for h in hunks:
+        hunk_lines = set(
+            range(h['new_start'], h['new_start'] + h['new_count']))
+        if hunk_lines & module_level_lines:
+            module_hunks.append(h)
+
+    if not module_hunks:
         return set()
 
-    return changed_classes
+    # Patterns for "harmless" lines: imports (including continuation lines
+    # inside multi-line import parens), comments, and blanks.
+    _harmless_pattern = re.compile(
+        r'^\s*(?:'
+        r'import |from \S+ import |'  # import statements
+        r'#|'                          # comments
+        r'[)\],]?\s*$|'               # closing parens, blank lines
+        r'[A-Z]\w*(?:,\s*)?$|'        # continuation: identifier lines in import(...)
+        r'\w+\s*,\s*$'                # "SamplingParams, SkipSoftmaxAttentionConfig,"
+        r')')
+    new_func_names: list[str] = []
+    func_def_pattern = re.compile(r'^def\s+(\w+)\s*\(')
+
+    for h in module_hunks:
+        added = h['added']
+        removed = h['removed']
+
+        # Harmless changes: imports (incl. continuation), comments, blanks
+        all_lines = added + removed
+        has_meaningful = any(
+            l.strip() and (
+                func_def_pattern.match(l)
+                or re.match(r'^class\s+', l)
+                or ('=' in l and not l.strip().startswith('#'))
+            )
+            for l in all_lines)
+        if not has_meaningful:
+            continue
+
+        # Pure addition (old_count == 0): new function/code block
+        if h['old_count'] == 0:
+            for l in added:
+                m = func_def_pattern.match(l)
+                if m:
+                    new_func_names.append(m.group(1))
+            continue
+
+        # Modification of existing module-level code → can't narrow down
+        return None
+
+    if not new_func_names:
+        # Only import changes or new code that doesn't define functions
+        return set()
+
+    # Find which classes reference the newly added functions
+    callers: set[str] = set()
+    for cls_name, cls_start, cls_end in class_ranges:
+        cls_body = '\n'.join(file_lines[cls_start - 1:cls_end])
+        for func_name in new_func_names:
+            if func_name in cls_body:
+                callers.add(cls_name)
+                break
+
+    return callers
 
 
 # Module-level variable to pass base_ref context to _select_by_test
@@ -550,14 +739,13 @@ def _select_by_test(database: dict[str, TestEntry], result: SelectionResult,
                      rule: ImpactRule, changed_file: str):
     """TEST tier: Tests from the changed test file.
 
-    For large test files (like test_llm_api_pytorch.py), uses git diff to
-    identify which test classes were actually modified, and only selects
-    tests from those classes. Falls back to selecting all tests from the
-    file if we can't determine the changed classes.
+    Uses git diff to identify changes at method-level precision:
+      - Method body changed → select only that method's tests
+      - Class-level change (attrs, decorators) → select all methods in class
+      - Module-level shared code changed → select all from file
     """
-    # Try to narrow down to specific changed classes
-    changed_classes = _get_changed_classes_in_test_file(changed_file,
-                                                        _current_base_ref)
+    changes = _get_changed_classes_in_test_file(changed_file,
+                                                _current_base_ref)
 
     for test_id, entry in database.items():
         # Check if this test belongs to the changed file
@@ -565,17 +753,27 @@ def _select_by_test(database: dict[str, TestEntry], result: SelectionResult,
                 or entry.test_file in changed_file):
             continue
 
-        if changed_classes:
-            # Only select tests from changed classes
-            if entry.test_class in changed_classes:
-                result.add(
-                    test_id, entry,
-                    f"TEST class={entry.test_class} modified in {changed_file}"
-                )
-        else:
-            # Can't determine changed classes → select all from this file
+        if changes.select_all:
             result.add(test_id, entry,
                        f"TEST file={changed_file} (all classes)")
+            continue
+
+        # Class-wide changes: select all methods in these classes
+        if entry.test_class in changes.class_wide:
+            result.add(
+                test_id, entry,
+                f"TEST class={entry.test_class} modified in {changed_file}"
+            )
+            continue
+
+        # Method-level precision: only select if this specific method changed
+        if entry.test_class in changes.class_methods:
+            if entry.test_method in changes.class_methods[entry.test_class]:
+                result.add(
+                    test_id, entry,
+                    f"TEST method={entry.test_class}::{entry.test_method} "
+                    f"modified in {changed_file}"
+                )
 
 
 def _select_new_tests(database: dict[str, TestEntry],
@@ -618,9 +816,246 @@ def _select_new_tests(database: dict[str, TestEntry],
                            f"NEW_TEST: added to {list_file}")
 
 
+def _load_waived_test_ids(repo_root: str) -> set[str]:
+    """Load current waived test IDs from waives.txt.
+
+    Returns a set of test IDs that are currently waived (known failures).
+    These tests should be excluded from nightly selection to avoid wasting
+    budget on tests that are expected to fail.
+    """
+    waives_path = (Path(repo_root) / "tests" / "integration" /
+                   "test_lists" / "waives.txt")
+    if not waives_path.exists():
+        return set()
+
+    waived = set()
+    for line in waives_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        test_id = _parse_waive_test_id(line)
+        if test_id:
+            waived.add(test_id)
+    return waived
+
+
+def _exclude_waived_tests(result: SelectionResult, repo_root: str):
+    """Remove currently waived tests from the selection.
+
+    Waived tests are known failures — running them wastes time budget.
+    The freed budget lets more non-failing tests run, improving coverage.
+
+    Matching supports both exact IDs and prefix matching: a waive entry
+    without parameters (e.g. `TestClass::test_method`) matches all
+    parametrized variants (`TestClass::test_method[param1]`, etc.).
+    """
+    waived = _load_waived_test_ids(repo_root)
+    if not waived:
+        return
+
+    # Split into exact IDs (with params) and prefix IDs (without params)
+    exact_waived = set()
+    prefix_waived = []
+    for wid in waived:
+        if '[' in wid:
+            exact_waived.add(wid)
+        else:
+            prefix_waived.append(wid)
+
+    excluded = 0
+    for tid in list(result.selected_tests):
+        if tid in exact_waived:
+            del result.selected_tests[tid]
+            result.reasons.pop(tid, None)
+            excluded += 1
+        elif any(tid.startswith(p + '[') or tid == p
+                 for p in prefix_waived):
+            del result.selected_tests[tid]
+            result.reasons.pop(tid, None)
+            excluded += 1
+    if excluded:
+        import sys
+        print(f"Excluded {excluded} currently waived tests (known failures).",
+              file=sys.stderr)
+
+
+def _parse_waive_test_id(line: str) -> str:
+    """Extract a test ID from a waives.txt line.
+
+    Waive lines have formats like:
+      accuracy/test.py::Class::method SKIP (url)
+      full:L40S/accuracy/test.py::Class::method SKIP (url)
+      full:sm100/unittest/... SKIP (reason)
+
+    Returns the bare test ID (without SKIP/reason and without full:xxx/ prefix),
+    or empty string if the line is not a valid waive entry.
+    """
+    # Strip SKIP reason
+    test_id = re.sub(r'\s+SKIP\s*(\(.*\))?.*$', '', line).strip()
+    if not test_id or test_id.startswith('#'):
+        return ""
+
+    # Strip "full:<platform>/" prefix
+    if test_id.startswith("full:"):
+        # e.g. "full:L40S/accuracy/test.py::..." → "accuracy/test.py::..."
+        slash_idx = test_id.find('/')
+        if slash_idx >= 0:
+            test_id = test_id[slash_idx + 1:]
+        else:
+            return ""
+
+    # Must look like a pytest node ID
+    if '::' not in test_id:
+        return ""
+
+    return test_id
+
+
+def _load_durations(repo_root: str = ".") -> dict[str, float]:
+    """Load test duration data from .test_durations file."""
+    path = Path(repo_root) / "tests" / "integration" / "defs" / ".test_durations"
+    if not path.exists():
+        return {}
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _get_duration(test_id: str, durations: dict[str, float],
+                  default: float) -> float:
+    """Get duration for a test, falling back to default for unknown tests."""
+    return durations.get(test_id, default)
+
+
+def apply_time_budget(result: SelectionResult, budget_seconds: float,
+                      durations: dict[str, float],
+                      test_list_filter: str = None):
+    """Drop lowest-value tests until total duration fits within budget.
+
+    Algorithm:
+      Phase 0: Drop any single test exceeding 25% of the budget.
+      Phase 1: Greedy removal — repeatedly drop the test that loses fewest
+         unique features, breaking ties by longest duration.
+
+    Protected tests (representative set, NEW_TEST) are never dropped.
+    Directly modified test methods (TEST method=) respect the budget.
+
+    Args:
+        test_list_filter: If set, only count duration for tests in this list.
+            Tests not in the target list are ignored for budget purposes
+            but kept in the result.
+    """
+    protected_ids = set(REPRESENTATIVE_COVERAGE_SET)
+    # Tags that protect tests from both Phase 0 and Phase 1.
+    # TEST method= is NOT protected — modified test methods are important
+    # but should still respect the time budget.
+    _no_drop_tags = {"NEW_TEST"}
+
+    # Determine which tests are in scope for budget trimming
+    def in_scope(test_id: str) -> bool:
+        if not test_list_filter:
+            return True
+        entry = result.selected_tests.get(test_id)
+        return entry is not None and test_list_filter in entry.test_lists
+
+    def is_protected(test_id: str) -> bool:
+        if test_id in protected_ids:
+            return True
+        reasons = result.reasons.get(test_id, [])
+        return any(any(tag in r for tag in _no_drop_tags) for r in reasons)
+
+    # Compute default duration (median of known in-scope durations)
+    scope_ids = [tid for tid in result.selected_tests if in_scope(tid)]
+    known = [durations[tid] for tid in scope_ids if tid in durations]
+    default_dur = sorted(known)[len(known) // 2] if known else 300.0
+
+    def get_dur(tid: str) -> float:
+        return _get_duration(tid, durations, default_dur)
+
+    # Phase 0: Drop any single test that exceeds 25% of the budget.
+    # These are too expensive regardless of feature value.
+    # Only protected tests (NEW_TEST, representative set) survive.
+    max_single = budget_seconds * 0.25
+    dropped_count = 0
+    dropped_time = 0.0
+
+    for tid in list(result.selected_tests):
+        if not in_scope(tid) or is_protected(tid):
+            continue
+        dur = get_dur(tid)
+        if dur > max_single:
+            dropped_time += dur
+            del result.selected_tests[tid]
+            result.reasons.pop(tid, None)
+            dropped_count += 1
+
+    total = sum(get_dur(tid) for tid in result.selected_tests if in_scope(tid))
+    if total <= budget_seconds:
+        if dropped_count > 0:
+            result._budget_info = {
+                'dropped': dropped_count,
+                'dropped_time': dropped_time,
+                'remaining_time': total,
+                'budget': budget_seconds,
+            }
+        return
+
+    # Phase 1: Greedy removal — drop the test that loses fewest unique
+    # features, breaking ties by longest duration (biggest savings).
+    while total > budget_seconds:
+        # Build feature → test_ids map for current in-scope selection
+        feat_coverage: dict[str, set[str]] = {}
+        for tid in result.selected_tests:
+            if not in_scope(tid):
+                continue
+            for feat in result.selected_tests[tid].features:
+                feat_coverage.setdefault(feat, set()).add(tid)
+
+        best_drop = None
+        best_unique = float('inf')
+        best_dur = -1.0
+
+        for tid in list(result.selected_tests):
+            if not in_scope(tid) or is_protected(tid):
+                continue
+            dur = get_dur(tid)
+            # Count features that ONLY this test covers
+            unique_count = sum(
+                1 for f in result.selected_tests[tid].features
+                if len(feat_coverage.get(f, set())) <= 1
+            )
+            # Prefer: fewest unique features first, then longest duration
+            if (unique_count < best_unique
+                    or (unique_count == best_unique and dur > best_dur)):
+                best_drop = tid
+                best_unique = unique_count
+                best_dur = dur
+
+        if best_drop is None:
+            break  # Only protected tests remain
+
+        total -= get_dur(best_drop)
+        dropped_time += get_dur(best_drop)
+        del result.selected_tests[best_drop]
+        result.reasons.pop(best_drop, None)
+        dropped_count += 1
+
+    if dropped_count > 0:
+        # Add a note to the result for reporting
+        result._budget_info = {
+            'dropped': dropped_count,
+            'dropped_time': dropped_time,
+            'remaining_time': total,
+            'budget': budget_seconds,
+        }
+
+
 def select_tests(database: dict[str, TestEntry],
                  changed_files: list[str],
-                 base_ref: str = "") -> SelectionResult:
+                 base_ref: str = "",
+                 repo_root: str = ".") -> SelectionResult:
     """Main entry: select tests based on changed files.
 
     Args:
@@ -628,6 +1063,7 @@ def select_tests(database: dict[str, TestEntry],
         changed_files: List of changed file paths (relative to repo root)
         base_ref: Git ref that was used to compute the diff (for TEST tier
             class-level narrowing)
+        repo_root: Path to the repository root (for loading waives.txt)
 
     Returns:
         SelectionResult with selected tests and explanations
@@ -696,33 +1132,223 @@ def select_tests(database: dict[str, TestEntry],
     # extract newly added test IDs from the diff and select them.
     _select_new_tests(database, result, changed_files, base_ref)
 
-    # Deduplicate parametrized variants: cap the number of parametrized
-    # variants per (class, method) to keep the selected set small.
-    _deduplicate_parametrized(result, max_variants=1)
+    # Exclude currently waived tests — they are known failures and running
+    # them wastes budget that could cover other tests. Done BEFORE dedup
+    # so the greedy coverage algorithms see more available tests and
+    # produce better coverage.
+    # Note: un-waived tests (removed from waives.txt) are NOT force-selected.
+    # Bug closure already requires main-branch verification, so un-waived
+    # tests don't need special treatment — they participate via normal rules
+    # and weekly full runs provide the safety net.
+    _exclude_waived_tests(result, str(repo_root))
 
-    # Second pass: cap to 1 method per TestClass for all non-CORE tests.
-    # The representative set covers the broad case; extra tests from
-    # DEFAULT_ON/OPT_IN/MODEL/TEST are supplementary.
+    # Deduplicate parametrized variants: keep variants that contribute
+    # new parameter tags (backends, configs), drop redundant combos.
+    _deduplicate_parametrized(result)
+
+    # Second pass: greedy feature-coverage dedup per class.
     _deduplicate_per_class(result)
 
     return result
 
 
-def _deduplicate_parametrized(result: SelectionResult,
-                              max_variants: int = 3):
-    """Cap parametrized variants per (test_class, test_method).
+def _tokenize_params(entry) -> set[str]:
+    """Extract a set of parameter tags from a test entry for diversity scoring.
 
-    Deduplicates tests whose reasons are ALL from OPT_IN or MODEL tiers.
-    Tests in the representative set, or selected by CORE/DEFAULT_ON/TEST
+    Uses resolved_params (from parametrize decorator parsing) when available,
+    falling back to KV params and raw_params tokenization.
+
+    For each parametrize dimension declared on the method, if no value for
+    that dimension is found in the tags, a "dim:default" tag is injected so
+    that variants using the implicit default are distinguishable from those
+    with explicit values. Dimensions come from the actual @parametrize
+    decorators in the test source, not from a hardcoded keyword list.
+    """
+    _TRIVIAL_VALUES = {'true', 'false', '0', '1', '2', '3'}
+
+    tags = set()
+
+    # Use resolved_params (most complete: includes custom-ID param values)
+    # or fall back to parsed KV params.
+    kv_source = entry.resolved_params or entry.params
+    for k, v in kv_source.items():
+        v_lower = str(v).lower()
+        if v_lower in _TRIVIAL_VALUES:
+            # Boolean/trivial values: just use the key as tag.
+            # This avoids false diversity between on/off flag combos.
+            tags.add(k.lower())
+        else:
+            # Meaningful values (e.g. CUTLASS, TRTLLM): use "key=value"
+            tags.add(f'{k.lower()}={v_lower}')
+
+    # From raw_params — only when resolved_params is empty, since
+    # resolved_params already captures all parameter info from the
+    # decorator. Raw tokens like "tp8ep8" would create false uniqueness.
+    if not entry.resolved_params and entry.raw_params:
+        for token in re.split(r'[-=_]', entry.raw_params):
+            token = token.strip().lower()
+            if token and token not in _TRIVIAL_VALUES:
+                tags.add(token)
+
+    # Inject "dim:default" for each declared parametrize dimension
+    # that has no value in resolved_params or params.
+    all_param_keys = {k.lower() for k in kv_source} if kv_source else set()
+
+    for dim in entry.param_dimensions:
+        dim_lower = dim.lower().strip()
+        if dim_lower not in all_param_keys:
+            tags.add(f'{dim_lower}:default')
+
+    return tags
+
+
+def _greedy_select_by_diversity(
+    test_ids: list[str],
+    result: SelectionResult,
+    max_keep: int,
+) -> set[str]:
+    """Select up to max_keep variants that maximize parameter tag coverage.
+
+    Algorithm:
+      1. Sort by feature count descending (feature-rich variants first).
+      2. Among candidates with the same feature count, greedily pick the one
+         that covers the most new (uncovered) parameter tags.
+      3. Repeat until max_keep reached.
+
+    This ensures high-feature variants are prioritized, and among equals
+    the selection maximizes diversity across parameter combinations.
+    """
+    # Pre-compute tags and feature counts
+    tid_tags: dict[str, set[str]] = {}
+    tid_fcnt: dict[str, int] = {}
+    for tid in test_ids:
+        entry = result.selected_tests[tid]
+        tid_tags[tid] = _tokenize_params(entry)
+        tid_fcnt[tid] = len(entry.features)
+
+    # Group by feature count (descending)
+    by_fcnt: dict[int, list[str]] = {}
+    for tid in test_ids:
+        by_fcnt.setdefault(tid_fcnt[tid], []).append(tid)
+
+    keep = []
+    covered_tags: set[str] = set()
+
+    for fcnt in sorted(by_fcnt.keys(), reverse=True):
+        if len(keep) >= max_keep:
+            break
+        candidates = list(by_fcnt[fcnt])
+        while candidates and len(keep) < max_keep:
+            # Pick the candidate that adds the most new tags
+            best_tid = max(
+                candidates,
+                key=lambda tid: len(tid_tags[tid] - covered_tags),
+            )
+            covered_tags |= tid_tags[best_tid]
+            keep.append(best_tid)
+            candidates.remove(best_tid)
+
+    return set(keep)
+
+
+def _greedy_select_by_features(
+    test_ids: list[str],
+    result: SelectionResult,
+) -> set[str]:
+    """Select tests greedily until no remaining test adds new features.
+
+    Algorithm:
+      1. Sort candidates by feature count descending.
+      2. Pick the one with the most features.
+      3. Iteratively pick the candidate whose features add the most
+         uncovered features.
+      4. Stop when no candidate adds any new feature.
+
+    Always returns at least 1 test (the one with the most features).
+    """
+    remaining = list(test_ids)
+    keep = []
+    covered: set[str] = set()
+
+    while remaining:
+        # Pick the candidate that adds the most new features
+        best_tid = max(
+            remaining,
+            key=lambda tid: len(
+                result.selected_tests[tid].features - covered),
+        )
+        new_features = result.selected_tests[best_tid].features - covered
+        if not new_features and keep:
+            # No new features can be added — stop
+            break
+        covered |= result.selected_tests[best_tid].features
+        keep.append(best_tid)
+        remaining.remove(best_tid)
+
+    return set(keep)
+
+
+def _greedy_select_by_tags(
+    test_ids: list[str],
+    result: SelectionResult,
+) -> set[str]:
+    """Select parametrized variants greedily until no new tags can be added.
+
+    Algorithm:
+      1. Sort by feature count descending (feature-rich first).
+      2. Pick the best, then iteratively pick whichever adds the most
+         new parameter tags.
+      3. Stop when no remaining variant adds any new tag.
+
+    This keeps variants that represent genuinely different configurations
+    (e.g. different backends) while dropping those that are just different
+    flag combinations of the same things.
+    """
+    remaining = list(test_ids)
+    keep = []
+    covered: set[str] = set()
+
+    # Pre-compute tags
+    tid_tags = {tid: _tokenize_params(result.selected_tests[tid])
+                for tid in test_ids}
+
+    # First pick: highest feature count, break ties by most tags
+    remaining.sort(
+        key=lambda tid: (
+            len(result.selected_tests[tid].features),
+            len(tid_tags[tid]),
+        ),
+        reverse=True,
+    )
+
+    while remaining:
+        best_tid = max(
+            remaining,
+            key=lambda tid: len(tid_tags[tid] - covered),
+        )
+        new_tags = tid_tags[best_tid] - covered
+        if not new_tags and keep:
+            break
+        covered |= tid_tags[best_tid]
+        keep.append(best_tid)
+        remaining.remove(best_tid)
+
+    return set(keep)
+
+
+def _deduplicate_parametrized(result: SelectionResult):
+    """Reduce parametrized variants per (test_class, test_method).
+
+    Deduplicates tests whose reasons are ALL from dedup-eligible tiers.
+    Tests in the representative set, or selected by CORE/FALLBACK/NEW_TEST
     tiers, are never removed.
 
-    When capping, selects a spread: first, last, and evenly-spaced middle
-    entries (sorted alphabetically by test_id) to maximize parameter diversity.
+    Selection uses greedy tag coverage: keep adding variants as long as they
+    contribute new parameter tags (e.g. a new backend, a new flag value).
+    Stop when no remaining variant adds anything new.
     """
-    _dedup_tiers = {"Tier2:OPT_IN", "MODEL", "TEST", "Tier1:DEFAULT_ON"}
-    # Only CORE (representative set) and FALLBACK are exempt from dedup.
-    # DEFAULT_ON is dedup-eligible: the representative set already provides
-    # broad coverage, DEFAULT_ON tests are supplementary.
+    # Only CORE (representative set), FALLBACK, and NEW_TEST are exempt.
+    # NEW_TEST entries must all run to verify newly added tests pass.
     _no_dedup_tiers = {"Tier0:CORE", "FALLBACK", "NEW_TEST"}
 
     # Protect: never remove representative set entries
@@ -733,7 +1359,7 @@ def _deduplicate_parametrized(result: SelectionResult,
     for test_id, entry in result.selected_tests.items():
         if test_id in protected_ids:
             continue
-        # Skip dedup if ANY reason is from a non-dedup tier (CORE/DEFAULT_ON/FALLBACK)
+        # Skip dedup if ANY reason is from a non-dedup tier
         reasons = result.reasons.get(test_id, [])
         if not reasons:
             continue
@@ -742,47 +1368,103 @@ def _deduplicate_parametrized(result: SelectionResult,
         key = (entry.test_class, entry.test_method)
         groups.setdefault(key, []).append(test_id)
 
-    # For each group that exceeds max_variants, keep the variants with the
-    # most enabled features. Feature-rich variants exercise more code paths
-    # per test, making them higher-value representatives.
     for (cls, method), test_ids in groups.items():
-        if len(test_ids) <= max_variants:
+        if len(test_ids) <= 1:
             continue
 
         n = len(test_ids)
-        ranked = sorted(test_ids,
-                        key=lambda tid: len(result.selected_tests[tid].features),
-                        reverse=True)
-        keep_ids = set(ranked[:max_variants])
+        keep_ids = _greedy_select_by_tags(test_ids, result)
         remove_ids = set(test_ids) - keep_ids
 
         for tid in remove_ids:
             del result.selected_tests[tid]
-            # Update reasons to note dedup
             result.reasons.pop(tid, None)
 
-        # Annotate kept tests
         for tid in keep_ids:
             result.reasons[tid].append(
-                f"DEDUP: kept {max_variants}/{n} variants of "
+                f"DEDUP: kept {len(keep_ids)}/{n} variants of "
                 f"{cls}::{method}"
             )
 
 
+def _deduplicate_per_class_feature_coverage(
+    groups: dict[str, list[str]],
+    result: SelectionResult,
+    label: str,
+):
+    """Greedy feature-coverage dedup at the METHOD level within each class.
+
+    For each class, group test IDs by method, compute the feature union per
+    method, then greedily keep methods until no remaining method adds a new
+    feature.  All surviving variants of a kept method are retained.
+    """
+    for cls, test_ids in groups.items():
+        method_tids: dict[str, list[str]] = {}
+        for tid in test_ids:
+            method = result.selected_tests[tid].test_method
+            method_tids.setdefault(method, []).append(tid)
+
+        if len(method_tids) <= 1:
+            continue
+
+        # Compute union of features per method
+        method_features: dict[str, set[str]] = {}
+        for method, tids in method_tids.items():
+            union = set()
+            for tid in tids:
+                union |= result.selected_tests[tid].features
+            method_features[method] = union
+
+        # Greedy: keep methods until no new features
+        remaining = list(method_tids.keys())
+        keep_methods = []
+        covered: set[str] = set()
+
+        while remaining:
+            best = max(remaining,
+                       key=lambda m: len(method_features[m] - covered))
+            new_feats = method_features[best] - covered
+            if not new_feats and keep_methods:
+                break
+            covered |= method_features[best]
+            keep_methods.append(best)
+            remaining.remove(best)
+
+        n_methods = len(method_tids)
+        remove_methods = set(method_tids.keys()) - set(keep_methods)
+        for method in remove_methods:
+            for tid in method_tids[method]:
+                del result.selected_tests[tid]
+                result.reasons.pop(tid, None)
+
+        for method in keep_methods:
+            for tid in method_tids[method]:
+                result.reasons[tid].append(
+                    f"DEDUP-CLASS: kept {len(keep_methods)}/{n_methods} "
+                    f"methods of {cls} ({label})"
+                )
+
+
 def _deduplicate_per_class(result: SelectionResult):
-    """Second-pass dedup: keep 1 method per TestClass.
+    """Second-pass dedup: reduce methods per TestClass.
 
     After the first pass (1 variant per method), there can still be many
-    different methods per TestClass. For non-CORE tests, one method per class
-    is sufficient — pick the one with the most features.
+    different methods per TestClass.
 
-    Only CORE (representative set) and FALLBACK are exempt.
+    Strategy varies by tier:
+      - MODEL tier: greedy feature coverage — keep methods that contribute
+        new features, drop methods whose features are already covered.
+      - TEST tier: no dedup — selection is already method-level precise.
+      - Other tiers (DEFAULT_ON, OPT_IN): greedy feature coverage.
+
+    Exempt from dedup: CORE, FALLBACK, NEW_TEST, TEST.
     """
     protected_ids = set(REPRESENTATIVE_COVERAGE_SET)
     _no_dedup = {"Tier0:CORE", "FALLBACK", "NEW_TEST"}
 
-    # Group by test_class
-    class_groups: dict[str, list[str]] = {}
+    # Collect dedup-eligible tests into one group
+    dedup_groups: dict[str, list[str]] = {}
+
     for test_id, entry in result.selected_tests.items():
         if test_id in protected_ids:
             continue
@@ -791,28 +1473,15 @@ def _deduplicate_per_class(result: SelectionResult):
             continue
         if any(any(nd in r for nd in _no_dedup) for r in reasons):
             continue
-        class_groups.setdefault(entry.test_class, []).append(test_id)
-
-    for cls, test_ids in class_groups.items():
-        if len(test_ids) <= 1:
+        # TEST tier: skip dedup (method-level selection is already precise)
+        if any(r.startswith("TEST ") for r in reasons):
             continue
 
-        n = len(test_ids)
-        ranked = sorted(
-            test_ids,
-            key=lambda tid: len(result.selected_tests[tid].features),
-            reverse=True,
-        )
-        keep_id = ranked[0]
-        remove_ids = set(test_ids) - {keep_id}
+        dedup_groups.setdefault(entry.test_class, []).append(test_id)
 
-        for tid in remove_ids:
-            del result.selected_tests[tid]
-            result.reasons.pop(tid, None)
-
-        result.reasons[keep_id].append(
-            f"DEDUP-CLASS: kept 1/{n} methods of {cls}"
-        )
+    # All tiers use greedy feature coverage
+    _deduplicate_per_class_feature_coverage(
+        dedup_groups, result, "feature coverage")
 
 
 def _primary_reason(reasons: list[str]) -> str:
@@ -832,37 +1501,47 @@ def _primary_reason(reasons: list[str]) -> str:
     if any("NEW_TEST" in reason for reason in reasons):
         return "NEW_TEST: newly added to test list"
 
-    r = reasons[0]
+    # Pick the most specific reason across ALL reasons, not just the first.
+    # Priority: MODEL > TEST > OPT_IN > DEFAULT_ON > CORE > FALLBACK
+    # This ensures e.g. an e2e test matched by both DEFAULT_ON (kv_cache)
+    # and MODEL (arch=qwen) gets grouped under MODEL.
+    for r in reasons:
+        if r.startswith("MODEL"):
+            m = re.search(r'arch=(\S+)', r)
+            arch = m.group(1) if m else "unknown"
+            return f"MODEL: {arch}"
 
-    # TEST tier
-    if r.startswith("TEST class="):
-        cls = r.split("class=")[1].split(" ")[0]
-        return f"TEST: {cls} modified"
-    if r.startswith("TEST file="):
-        return "TEST: test file modified"
+    for r in reasons:
+        if r.startswith("TEST method="):
+            # "TEST method=TestGPTOSS::test_w4_1gpu modified in ..."
+            method_id = r.split("method=")[1].split(" ")[0]
+            cls = method_id.split("::")[0]
+            return f"TEST: {cls} modified"
+        if r.startswith("TEST class="):
+            cls = r.split("class=")[1].split(" ")[0]
+            return f"TEST: {cls} modified"
+        if r.startswith("TEST file="):
+            return "TEST: test file modified"
 
-    # FALLBACK
-    if r.startswith("FALLBACK"):
-        return "FALLBACK: unmatched code"
+    for r in reasons:
+        if "Tier2:OPT_IN" in r:
+            m = re.search(r'feature=(\S+)', r)
+            feat = m.group(1) if m else "unknown"
+            return f"OPT_IN: {feat}"
 
-    # Tier-based: extract tier and feature/arch
-    if "Tier0:CORE" in r:
-        return "Representative coverage set (core infrastructure change)"
+    for r in reasons:
+        if "Tier1:DEFAULT_ON" in r:
+            m = re.search(r'feature=(\S+)', r)
+            feat = m.group(1) if m else "unknown"
+            return f"DEFAULT_ON: {feat}"
 
-    if "Tier1:DEFAULT_ON" in r:
-        m = re.search(r'feature=(\S+)', r)
-        feat = m.group(1) if m else "unknown"
-        return f"DEFAULT_ON: {feat}"
+    for r in reasons:
+        if "Tier0:CORE" in r:
+            return "Representative coverage set (core infrastructure change)"
 
-    if "Tier2:OPT_IN" in r:
-        m = re.search(r'feature=(\S+)', r)
-        feat = m.group(1) if m else "unknown"
-        return f"OPT_IN: {feat}"
-
-    if r.startswith("MODEL"):
-        m = re.search(r'arch=(\S+)', r)
-        arch = m.group(1) if m else "unknown"
-        return f"MODEL: {arch}"
+    for r in reasons:
+        if r.startswith("FALLBACK"):
+            return "FALLBACK: unmatched code"
 
     return reasons[0][:60]
 
@@ -888,20 +1567,23 @@ def format_output(result: SelectionResult,
         reason_key = _primary_reason(result.reasons.get(test_id, []))
         groups.setdefault(reason_key, []).append(test_id)
 
-    # Sort groups: representative set first, then by group size descending
+    # Sort groups by priority (matching _primary_reason order), then by size
+    _GROUP_PRIORITY = {
+        "NEW_TEST": 0,
+        "MODEL": 1,
+        "TEST": 2,
+        "OPT_IN": 3,
+        "DEFAULT_ON": 4,
+        "Representative": 5,
+        "CORE": 5,
+        "FALLBACK": 6,
+    }
+
     def group_sort_key(item):
         key, tests = item
-        if key.startswith("NEW_TEST"):
-            return (0, -len(tests), key)
-        if "Representative" in key or "representative" in key:
-            return (1, -len(tests), key)
-        if key.startswith("MODEL"):
-            return (2, -len(tests), key)
-        if key.startswith("OPT_IN"):
-            return (3, -len(tests), key)
-        if key.startswith("TEST"):
-            return (4, -len(tests), key)
-        return (5, -len(tests), key)
+        prefix = key.split(":")[0].split(" ")[0]
+        priority = _GROUP_PRIORITY.get(prefix, 7)
+        return (priority, -len(tests), key)
 
     lines = []
     for reason_key, test_ids in sorted(groups.items(), key=group_sort_key):
@@ -1255,3 +1937,79 @@ def compute_stats(result: SelectionResult,
         'rules_by_tier': tier_counts,
         'unmatched_files': len(result.unmatched_files),
     }
+
+
+def generate_maintenance_warnings(
+    result: SelectionResult,
+    database: dict[str, TestEntry],
+) -> list[str]:
+    """Check for conditions that indicate impact_rules or parser config
+    needs updating.  Returns a list of human-readable warning strings.
+
+    Intended to be printed to stderr so maintainers notice issues early.
+    """
+    from .impact_rules import TESTCLASS_TO_ARCH
+
+    warnings: list[str] = []
+
+    # 1. Unmatched source files → may need new impact rules
+    code_exts = {'.py', '.cpp', '.h', '.cu', '.cuh', '.cc'}
+    unmatched_code = [
+        f for f in result.unmatched_files
+        if any(f.endswith(ext) for ext in code_exts)
+        and not f.startswith('.')       # skip dotfiles
+        and 'test' not in f.lower()     # skip test files (covered by TEST tier)
+    ]
+    if unmatched_code:
+        warnings.append(
+            f"[RULE] {len(unmatched_code)} source file(s) matched no impact rule "
+            f"(FALLBACK used). Consider adding rules to impact_rules.py:")
+        for f in unmatched_code[:10]:
+            warnings.append(f"  - {f}")
+        if len(unmatched_code) > 10:
+            warnings.append(f"  ... and {len(unmatched_code) - 10} more")
+
+    # 2. Test classes not in TESTCLASS_TO_ARCH → need arch mapping
+    unknown_classes: dict[str, set[str]] = {}  # class → set of test_files
+    for entry in database.values():
+        if entry.test_class and not entry.arch:
+            if entry.test_class not in TESTCLASS_TO_ARCH:
+                unknown_classes.setdefault(
+                    entry.test_class, set()).add(entry.test_file)
+    if unknown_classes:
+        warnings.append(
+            f"[ARCH] {len(unknown_classes)} test class(es) have no architecture "
+            f"mapping in TESTCLASS_TO_ARCH:")
+        for cls in sorted(unknown_classes)[:10]:
+            files = ', '.join(sorted(unknown_classes[cls]))
+            warnings.append(f"  - {cls} ({files})")
+        if len(unknown_classes) > 10:
+            warnings.append(f"  ... and {len(unknown_classes) - 10} more")
+
+    # 3. Architectures in database but not covered by REPRESENTATIVE_COVERAGE_SET
+    db_archs = {e.arch for e in database.values() if e.arch}
+    rep_archs = set()
+    for tid in REPRESENTATIVE_COVERAGE_SET:
+        if tid in database:
+            if database[tid].arch:
+                rep_archs.add(database[tid].arch)
+    missing_archs = db_archs - rep_archs
+    if missing_archs:
+        warnings.append(
+            f"[REP] {len(missing_archs)} architecture(s) have no test in "
+            f"REPRESENTATIVE_COVERAGE_SET:")
+        for arch in sorted(missing_archs):
+            count = sum(1 for e in database.values() if e.arch == arch)
+            warnings.append(f"  - {arch} ({count} tests in database)")
+
+    # 4. Tests with zero features (may indicate missing extraction patterns)
+    no_features = [
+        tid for tid, e in database.items()
+        if not e.features and e.test_class  # skip module-level tests
+    ]
+    if len(no_features) > 20:
+        warnings.append(
+            f"[FEAT] {len(no_features)} tests have no extracted features. "
+            f"Feature extraction patterns may need updating.")
+
+    return warnings

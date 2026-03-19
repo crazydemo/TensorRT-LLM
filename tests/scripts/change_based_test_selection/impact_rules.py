@@ -158,6 +158,21 @@ IMPACT_RULES: list[ImpactRule] = [
         tier=Tier.CORE,
         description="PyTorch auto model resolution",
     ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/pyexecutor/_util.py",
+        tier=Tier.CORE,
+        description="PyExecutor internal utilities",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/pyexecutor/make_decoding_batch_input_output.py",
+        tier=Tier.CORE,
+        description="Decoding batch I/O construction",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_utils.py",
+        tier=Tier.CORE,
+        description="Top-level utility functions",
+    ),
     # C++ core that binds to Python
     ImpactRule(
         pattern="cpp/tensorrt_llm/batch_manager/*",
@@ -168,6 +183,64 @@ IMPACT_RULES: list[ImpactRule] = [
         pattern="cpp/tensorrt_llm/executor/*",
         tier=Tier.CORE,
         description="C++ executor core",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/common/attentionOp.*",
+        tier=Tier.DEFAULT_ON,
+        feature="attention",
+        description="C++ attention op implementation",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/thop/attentionOp.*",
+        tier=Tier.DEFAULT_ON,
+        feature="attention",
+        description="C++ attention op THop binding",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/thop/trtllmGenQKVProcessOp.*",
+        tier=Tier.DEFAULT_ON,
+        feature="attention",
+        description="C++ QKV processing op",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/kernels/gptKernels.*",
+        tier=Tier.CORE,
+        description="C++ GPT kernels (shared across models)",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/kernels/communicationKernels/moeAlltoAllKernels.*",
+        tier=Tier.OPT_IN,
+        feature="moe",
+        description="C++ MoE AllToAll communication kernels",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/thop/moeAlltoAllOp.*",
+        tier=Tier.OPT_IN,
+        feature="moe",
+        description="C++ MoE AllToAll THop binding",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/kernels/cutlass_kernels/fp4_gemm/*",
+        tier=Tier.OPT_IN,
+        feature="nvfp4",
+        description="C++ FP4 GEMM CUTLASS kernels",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/thop/fp4Gemm.*",
+        tier=Tier.OPT_IN,
+        feature="nvfp4",
+        description="C++ FP4 GEMM THop binding",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/kernels/cutlass_kernels/fpA_intB_gemm/*",
+        tier=Tier.OPT_IN,
+        feature="quantization",
+        description="C++ FP-A INT-B GEMM CUTLASS kernels",
+    ),
+    ImpactRule(
+        pattern="cpp/tensorrt_llm/thop/CMakeLists.txt",
+        tier=Tier.CORE,
+        description="C++ THop build config (affects all C++ ops)",
     ),
     ImpactRule(
         pattern="cpp/tensorrt_llm/layers/samplingLayer.*",
@@ -455,6 +528,258 @@ IMPACT_RULES: list[ImpactRule] = [
         description="Mamba/SSM modules",
     ),
 
+    # AutoDeploy shim (core infra for AD backend)
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/auto_deploy/shim/*",
+        tier=Tier.CORE,
+        description="AutoDeploy executor shim (core AD infra)",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/auto_deploy/llm_args.py",
+        tier=Tier.CORE,
+        description="AutoDeploy LLM args",
+    ),
+    # AutoDeploy transforms
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/auto_deploy/transform/*",
+        tier=Tier.OPT_IN,
+        feature="auto_deploy",
+        description="AutoDeploy graph transforms",
+    ),
+    # AutoDeploy custom ops
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/auto_deploy/custom_ops/*",
+        tier=Tier.OPT_IN,
+        feature="auto_deploy",
+        description="AutoDeploy custom ops (attention, MLA, FLA, mamba, quant)",
+    ),
+    # AutoDeploy models
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/auto_deploy/models/*",
+        tier=Tier.OPT_IN,
+        feature="auto_deploy",
+        description="AutoDeploy model patches and configs",
+    ),
+    # AutoDeploy distributed
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/auto_deploy/distributed/*",
+        tier=Tier.OPT_IN,
+        feature="auto_deploy",
+        description="AutoDeploy distributed utilities",
+    ),
+    # AutoDeploy utils
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/auto_deploy/utils/*",
+        tier=Tier.OPT_IN,
+        feature="auto_deploy",
+        description="AutoDeploy utility functions",
+    ),
+    # AutoDeploy config
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/auto_deploy/config/*",
+        tier=Tier.OPT_IN,
+        feature="auto_deploy",
+        description="AutoDeploy default config",
+    ),
+    # Mamba cache manager
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/pyexecutor/mamba_cache_manager.py",
+        tier=Tier.OPT_IN,
+        feature="mamba",
+        description="Mamba state-space model cache manager",
+    ),
+    # Speculative decoding model drafter and spec sampler base
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/speculative/model_drafter.py",
+        tier=Tier.OPT_IN,
+        feature="speculative",
+        description="Model-based speculative drafter",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/speculative/spec_sampler_base.py",
+        tier=Tier.OPT_IN,
+        feature="speculative",
+        description="Speculative sampling base class",
+    ),
+    # Custom C++ ops (torch compile path)
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/custom_ops/cpp_custom_ops.py",
+        tier=Tier.OPT_IN,
+        feature="torch_compile",
+        description="C++ custom ops for torch compile path",
+    ),
+    # Visual generation
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/visual_gen/*",
+        tier=Tier.OPT_IN,
+        feature="visual_gen",
+        description="Visual generation (Flux, WAN, LTX2) pipelines",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/llmapi/visual_gen.py",
+        tier=Tier.OPT_IN,
+        feature="visual_gen",
+        description="Visual generation API entry point",
+    ),
+    # Serving layer
+    ImpactRule(
+        pattern="tensorrt_llm/serve/openai_server.py",
+        tier=Tier.DEFAULT_ON,
+        feature="serve",
+        description="OpenAI-compatible server",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/serve/openai_client.py",
+        tier=Tier.OPT_IN,
+        feature="serve",
+        description="OpenAI client utilities",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/serve/harmony_adapter.py",
+        tier=Tier.OPT_IN,
+        feature="serve",
+        description="Harmony adapter for serving",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/serve/media_storage.py",
+        tier=Tier.OPT_IN,
+        feature="serve",
+        description="Media storage for multimodal serving",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/serve/postprocess_handlers.py",
+        tier=Tier.OPT_IN,
+        feature="serve",
+        description="Serve post-processing handlers",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/serve/responses_utils.py",
+        tier=Tier.OPT_IN,
+        feature="serve",
+        description="Serve response utilities",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/serve/tool_parser/*",
+        tier=Tier.OPT_IN,
+        feature="serve",
+        description="Serve tool call parsers",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/serve/scripts/*",
+        tier=Tier.IGNORE,
+        description="Serve benchmark scripts",
+    ),
+    # Reasoning parser
+    ImpactRule(
+        pattern="tensorrt_llm/llmapi/reasoning_parser.py",
+        tier=Tier.OPT_IN,
+        feature="reasoning",
+        description="Reasoning output parser (chain-of-thought)",
+    ),
+    # Multimodal inputs
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/models/modeling_multimodal_inputs.py",
+        tier=Tier.OPT_IN,
+        feature="multimodal",
+        description="Multimodal input processing",
+    ),
+    # MoE communication backends
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/modules/fused_moe/communication/*",
+        tier=Tier.OPT_IN,
+        feature="moe",
+        description="MoE communication backends (DeepEP, NVLink)",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/modules/fused_moe/configurable_moe.py",
+        tier=Tier.OPT_IN,
+        feature="moe",
+        description="Configurable MoE module",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/modules/fused_moe/quantization.py",
+        tier=Tier.OPT_IN,
+        feature="moe",
+        description="MoE quantization",
+    ),
+    # Disaggregated serving sub-modules
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/disaggregation/base/*",
+        tier=Tier.OPT_IN,
+        feature="disaggregated",
+        description="Disaggregated serving base modules",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/disaggregation/native/*",
+        tier=Tier.OPT_IN,
+        feature="disaggregated",
+        description="Disaggregated serving native implementation",
+    ),
+    # Multimodal inputs utils
+    ImpactRule(
+        pattern="tensorrt_llm/inputs/*",
+        tier=Tier.OPT_IN,
+        feature="multimodal",
+        description="Multimodal input utilities",
+    ),
+    # Benchmark utilities
+    ImpactRule(
+        pattern="tensorrt_llm/bench/*",
+        tier=Tier.IGNORE,
+        description="Benchmark utilities (trtllm-bench)",
+    ),
+    # Build scripts
+    ImpactRule(
+        pattern="scripts/build_wheel.py",
+        tier=Tier.IGNORE,
+        description="Wheel build script",
+    ),
+    ImpactRule(
+        pattern="scripts/release_check.py",
+        tier=Tier.IGNORE,
+        description="Release check script",
+    ),
+    # Security scanning
+    ImpactRule(
+        pattern="security_scanning/*",
+        tier=Tier.IGNORE,
+        description="Security scanning configs",
+    ),
+    # Jenkins CI
+    ImpactRule(
+        pattern="jenkins/*",
+        tier=Tier.IGNORE,
+        description="Jenkins CI pipeline scripts",
+    ),
+    # Examples
+    ImpactRule(
+        pattern="examples/*",
+        tier=Tier.IGNORE,
+        description="Example configs and scripts",
+    ),
+    # Benchmarks
+    ImpactRule(
+        pattern="tests/microbenchmarks/*",
+        tier=Tier.IGNORE,
+        description="Microbenchmark scripts",
+    ),
+    ImpactRule(
+        pattern="tests/scripts/*",
+        tier=Tier.IGNORE,
+        description="Test infrastructure scripts",
+    ),
+    # Dotfiles (.codex, .claude, .github)
+    ImpactRule(
+        pattern=".codex/*",
+        tier=Tier.IGNORE,
+        description="Codex agent config",
+    ),
+    ImpactRule(
+        pattern=".claude/*",
+        tier=Tier.IGNORE,
+        description="Claude agent config",
+    ),
+
     # ---- Model-Specific ----
     ImpactRule(
         pattern="tensorrt_llm/models/llama/*",
@@ -553,6 +878,36 @@ IMPACT_RULES: list[ImpactRule] = [
         description="PyTorch Nemotron models",
     ),
     ImpactRule(
+        pattern="tensorrt_llm/_torch/models/modeling_minimaxm2.py",
+        tier=Tier.MODEL,
+        arch="deepseek_v2",
+        description="PyTorch MiniMaxM2 model (DeepSeek V2 arch)",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/models/modeling_parakeet.py",
+        tier=Tier.MODEL,
+        arch="parakeet",
+        description="PyTorch Parakeet model",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/models/modeling_radio.py",
+        tier=Tier.MODEL,
+        arch="nemotron",
+        description="PyTorch RADIO model (Nemotron family)",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/models/modeling_nemotron_nano.py",
+        tier=Tier.MODEL,
+        arch="nemotron",
+        description="PyTorch Nemotron Nano model",
+    ),
+    ImpactRule(
+        pattern="tensorrt_llm/_torch/models/checkpoints/hf/qwen3_next_weight_mapper.py",
+        tier=Tier.MODEL,
+        arch="qwen",
+        description="Qwen3Next HF weight mapper",
+    ),
+    ImpactRule(
         pattern="tensorrt_llm/models/eagle/*",
         tier=Tier.MODEL,
         arch="eagle",
@@ -616,6 +971,31 @@ IMPACT_RULES: list[ImpactRule] = [
         feature="serve",
         description="Serve test definitions",
     ),
+    ImpactRule(
+        pattern="tests/integration/defs/accuracy/test_llm_api_pytorch_multimodal.py",
+        tier=Tier.TEST,
+        description="Multimodal accuracy test definitions",
+    ),
+    ImpactRule(
+        pattern="tests/integration/defs/accuracy/test_llm_api_autodeploy.py",
+        tier=Tier.TEST,
+        description="AutoDeploy accuracy test definitions",
+    ),
+    ImpactRule(
+        pattern="tests/integration/defs/examples/test_ad_speculative_decoding.py",
+        tier=Tier.TEST,
+        description="AutoDeploy speculative decoding test definitions",
+    ),
+    ImpactRule(
+        pattern="tests/integration/defs/perf/*",
+        tier=Tier.TEST,
+        description="Performance test definitions",
+    ),
+    ImpactRule(
+        pattern="tests/integration/defs/stress_test/*",
+        tier=Tier.TEST,
+        description="Stress test definitions",
+    ),
 
     # ---- Additional Tier 2 (Opt-In) ----
     # Sparse attention (DSA)
@@ -624,6 +1004,13 @@ IMPACT_RULES: list[ImpactRule] = [
         tier=Tier.OPT_IN,
         feature="sparse_attention",
         description="Sparse/DSA attention backend",
+    ),
+    # Tokenizer GLM MoE DSA
+    ImpactRule(
+        pattern="tensorrt_llm/tokenizer/glm_moe_dsa/*",
+        tier=Tier.MODEL,
+        arch="chatglm",
+        description="GLM MoE DSA tokenizer",
     ),
     # Speculative decoding __init__ (package-level imports)
     ImpactRule(
@@ -648,14 +1035,6 @@ IMPACT_RULES: list[ImpactRule] = [
         pattern="tensorrt_llm/functional.py",
         tier=Tier.CORE,
         description="Core functional operations (broad impact)",
-    ),
-
-    # ---- Model-specific tokenizers ----
-    ImpactRule(
-        pattern="tensorrt_llm/tokenizer/glm_moe_dsa/*",
-        tier=Tier.MODEL,
-        arch="chatglm",
-        description="GLM MoE DSA tokenizer",
     ),
 
     # ---- Ignore: No accuracy test impact ----
@@ -767,7 +1146,85 @@ TESTCLASS_TO_ARCH: dict[str, str] = {
     "TestStarcoder2_15B": "llama",
     "TestLlama3_1_8B_Instruct_RocketKV": "llama",
     "TestMiniMaxM2": "deepseek_v2",
+    # AutoDeploy
+    "TestLlama3_1_8B_Instruct_Eagle3": "llama",
+    # Multimodal
+    "TestLlava_V1_6_Mistral_7B": "llama",
+    "TestNVILA_8B": "llama",
+    "TestNemotron_Nano_12B_V2_VL": "nemotron",
+    "TestPhi4MMFusedVisionLora": "phi",
+    "TestQwen2_5_VL_7B": "qwen",
+    "TestQwen2_VL_7B": "qwen",
+    "TestQwen3VL_MOE": "qwen",
+    "TestVILA1_5_3B": "llama",
+    # LLM API QA
+    "TestLlmDefaultBackend": "llama",
 }
+
+# Model name/path keywords → architecture mapping.
+# Used to match module-level test functions (e.g. test_e2e.py) that carry
+# model names in their parametrize values rather than in class attributes.
+# Patterns are matched case-insensitively against each entry in model_names.
+# Order matters: more specific patterns are checked first.
+MODEL_NAME_TO_ARCH: list[tuple[str, str]] = [
+    # DeepSeek family (must come before "llama" patterns)
+    ("deepseek-v3", "deepseek_v2"),
+    ("deepseek-v2", "deepseek_v2"),
+    ("deepseek-r1", "deepseek_v2"),
+    ("deepseekv3", "deepseek_v2"),
+    # Kimi / MiniMax (DeepSeek V2 arch)
+    ("kimi-k2", "deepseek_v2"),
+    ("minimax", "deepseek_v2"),
+    # Llama family (includes Mistral, Mixtral, etc.)
+    ("llama", "llama"),
+    ("mistral", "llama"),
+    ("mixtral", "llama"),
+    ("codestral", "llama"),
+    ("exaone", "llama"),
+    ("starcoder", "llama"),
+    ("bielik", "llama"),
+    ("kanana", "llama"),
+    ("seed-oss", "llama"),
+    # Nemotron
+    ("nemotron-ultra", "nemotron_nas"),
+    ("nemotron-super", "nemotron_nas"),
+    ("nemotron-nas", "nemotron_nas"),
+    ("nemotron", "nemotron"),
+    ("minitron", "nemotron"),
+    # Qwen
+    ("qwen", "qwen"),
+    ("qwq", "qwen"),
+    # GLM / ChatGLM
+    ("glm", "chatglm"),
+    # Gemma
+    ("gemma", "gemma"),
+    # GPT-OSS
+    ("gpt-oss", "gpt"),
+    ("gpt_oss", "gpt"),
+    # Phi
+    ("phi", "phi"),
+    # Parakeet
+    ("parakeet", "parakeet"),
+    # RADIO
+    ("radio", "nemotron"),
+    # Mamba
+    ("mamba", "mamba"),
+    # Eagle (spec decode draft model)
+    ("eagle", "eagle"),
+]
+
+
+def model_name_to_arch(model_name: str) -> str:
+    """Map a model name/path string to an architecture key.
+
+    Returns empty string if no match.
+    """
+    name_lower = model_name.lower()
+    for pattern, arch in MODEL_NAME_TO_ARCH:
+        if pattern in name_lower:
+            return arch
+    return ""
+
 
 # ============================================================================
 # Representative Coverage Set
@@ -798,6 +1255,11 @@ REPRESENTATIVE_COVERAGE_SET: list[str] = [
     "accuracy/test_llm_api_pytorch.py::TestNemotronV3Nano::test_auto_dtype",
     # gpt-oss — also covers: w4, moe
     "accuracy/test_llm_api_pytorch.py::TestGPTOSS::test_w4_1gpu[v1_kv_cache-True-True-cutlass-auto]",
+
+    # chatglm — also covers: nvfp4, mtp
+    "accuracy/test_llm_api_pytorch.py::TestGLM4_6::test_nvfp4_2_model_mtp[2model]",
+    # nemotron_nas
+    "accuracy/test_llm_api_pytorch.py::TestNemotronNas::test_auto_dtype_tp8",
 
     # --- Opt-in feature coverage (1 GPU each) ---
     # Eagle3 (speculative decoding)

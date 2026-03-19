@@ -1,384 +1,488 @@
-# Change-Based Test Selection (CBTS)
+# Change-Based Test Selection Design Document
 
-A change-based test selection system for TensorRT-LLM QA CI.
+## 1. Overall Pipeline
 
-## What Problem Does This Solve
-
-TRT-LLM has 600+ accuracy integration tests. Running all of them requires significant GPU resources, but between nightlies only a few files typically change, leaving most tests unaffected.
-
-**CBTS does two things:**
-
-1. **Test selection**: Analyzes git diff and selects only the affected test subset
-2. **Regression locating**: Given a failing test and a good/bad commit range, ranks commits by likelihood of causing the regression, with PR links
+```
+git diff --name-only <base-ref>...HEAD
+              ↓
+         changed_files
+              ↓
+    ┌─────────────────────────┐
+    │  impact_rules matching   │  fnmatch each file against all rules
+    │  → (file, rule) pairs   │
+    └─────────────────────────┘
+              ↓
+    ┌─────────────────────────┐
+    │  additive-only filter    │  If diff for a high-impact tier file
+    │                         │  is purely additive → skip that rule
+    └─────────────────────────┘
+              ↓
+    ┌─────────────────────────┐
+    │  selector (per tier)     │  CORE / DEFAULT_ON / OPT_IN /
+    │                         │  MODEL / TEST each has its strategy
+    └─────────────────────────┘
+              ↓
+    ┌─────────────────────────┐
+    │  supplementary selection  │  NEW_TEST: new lines in test lists
+    └─────────────────────────┘
+              ↓
+    ┌─────────────────────────┐
+    │  exclude known failures  │  Filter out tests currently in
+    │                         │  waives.txt (free up budget)
+    └─────────────────────────┘
+              ↓
+    ┌─────────────────────────┐
+    │  two-pass deduplication  │  Pass 1: parametrized variant dedup
+    │                         │  Pass 2: intra-class method dedup
+    └─────────────────────────┘
+              ↓
+    ┌─────────────────────────┐
+    │  time budget trimming    │  Phase 0: drop outlier-duration tests
+    │  (default 8h, optional) │  Phase 1: greedy lowest-value removal
+    └─────────────────────────┘
+              ↓
+         group by reason, output test ID list
+```
 
 ---
 
-## Core Concepts
+## 2. Parser — Building the Test Database
 
-### Test Database
+### 2.1 Data Sources
 
-Each test is indexed by three dimensions:
+| Source | Path | Purpose |
+|--------|------|---------|
+| Test list files | `tests/integration/test_lists/qa/*.txt` | Full pytest node IDs, e.g. `llm_function_core.txt` |
+| Test definition source | `tests/integration/defs/**/*.py` | Python source files for test classes/methods |
+| TESTCLASS_TO_ARCH | dict in `impact_rules.py` | TestClass → model architecture mapping |
 
-| Dimension | Source | Example |
-|-----------|--------|---------|
-| **Model architecture** | `TestClass.MODEL_NAME` -> HF architecture -> source directory | `TestDeepSeekV3Lite` -> `deepseek_v2` |
-| **Features** | Method name + parameters + Config class instantiation in method body (L3 AST) | `test_nvfp4[mtp_nextn=2]` -> `{nvfp4, mtp}` |
-| **GPU platform** | `@skip_pre_*` decorators + `@skip_less_device(N)` | `@skip_pre_blackwell` -> `min_sm=100` |
+Test lists loaded by default:
+- `llm_function_core`
+- `llm_function_core_sanity`
+- `llm_function_rtx6k`
+- `llm_function_multinode`
+- `llm_function_stress`
 
-The database is built by parsing 4 test list files + AST analysis of test definition `.py` files, yielding ~600 entries.
+### 2.2 Parsing Process
 
-### Tier System: Impact Scope of Code Changes
+**Step 1: Parse test lists (.txt)**
 
-Different code paths have different blast radii. Source file paths are classified into 6 tiers:
-
+Each line is a pytest node ID in the format:
 ```
-Tier 0 (CORE)        Infrastructure that all tests depend on
-                      executor, sampler, model loader, mapping...
-                      -> Run representative coverage set (~20 tests)
-
-Tier 1 (DEFAULT_ON)  Features enabled by default but configurable
-                      KV cache, scheduler, attention backend, linear...
-                      -> Run tests that explicitly configure the feature + representative set
-
-Tier 2 (OPT_IN)      Features that must be explicitly enabled
-                      Eagle3, MTP, NVFP4, guided decoding, disagg...
-                      -> Run only tests that use the feature
-
-MODEL                 Model implementation code
-                      models/llama/*, models/deepseek_v2/*...
-                      -> Run all tests for that architecture (deduped to 1 richest variant)
-
-TEST                  Test definition files themselves
-                      test_llm_api_pytorch.py, test_e2e.py...
-                      -> Run tests in that file
-
-IGNORE                Docs, markdown, CI config
-                      -> Skip
+accuracy/test_llm_api_pytorch.py::TestDeepSeekV3Lite::test_nvfp4[moe_backend=CUTLASS-...]
 ```
 
-**Core principle: the broader the impact, the more conservative the strategy (use representative set as safety net); the narrower the impact, the more precise the matching.**
+Fields extracted:
+- `test_file`: relative path
+- `test_class`: class name
+- `test_method`: method name
+- `params`: key=value parameters (parsed from `[...]`)
+- `raw_params`: raw bracket contents
+- `test_lists`: which test lists this test belongs to
 
-### Representative Coverage Set
+**Step 2: AST analysis of test definitions (.py)**
 
-~20 hand-picked tests that cover:
-- At least 1 test per model architecture
-- At least 1 test per major opt-in feature
-- All single-GPU (fast to run)
-- Preference for tests that cover multiple features simultaneously
+Three-level analysis:
 
-When CORE or DEFAULT_ON code changes, this set runs instead of all 600+ tests.
+| Level | Scope | Extracted |
+|-------|-------|-----------|
+| **L1 (class)** | class body | `MODEL_NAME`, `MODEL_PATH` class attributes |
+| **L2 (decorator)** | method decorators | `@skip_pre_hopper` → min_sm=90; `@skip_less_device(4)` → min_gpu=4; `@parametrize(...)` → parameter dimensions and values |
+| **L3 (method body)** | method body | Scan for Config class instantiations, e.g. `KvCacheConfig(...)`, `Eagle3DecodingConfig(...)` |
 
-### New Test Detection
+**Step 3: Parametrize resolution**
 
-When test list files (`.txt` in `tests/integration/test_lists/qa/`) are modified, CBTS parses the git diff to find newly added test IDs. These are:
-- **Always selected** regardless of other rules
-- **Protected from deduplication** (never removed by either dedup pass)
-- **Grouped first** in the output under the `NEW_TEST` heading for visibility
+Two parametrize styles:
 
-This ensures that newly added tests always run in the next CI cycle after being added.
+1. **Custom IDs** — `@pytest.mark.parametrize("a,b", [...], ids=["name1", "name2"])`
+   - Build `id → {param: value}` mapping via the `ids` list
+   - Match substrings in raw_params to reverse-lookup parameter values
 
-### Additive-Only Safety Filter
+2. **Auto-generated IDs** — `@pytest.mark.parametrize("tp_size, ep_size, ...", [(4,4,True,...)])`
+   - pytest auto-joins `str(val)` with `-`, e.g. `4-4-True-True-True`
+   - Iterate all_values, generate auto_id and match against raw_params
 
-Not every code change is risky. The following diff patterns are automatically skipped:
+Cartesian product (multiple stacked `@parametrize`): the test ID is sub-IDs joined by `-`; each decorator is matched and consumed from the remaining string.
 
-| Pattern | Example | Verdict |
-|---------|---------|---------|
-| Comments / blank lines only | All added/removed lines start with `#` | Safe |
-| Expansion pattern | `"a" \| "b"` -> `"a" \| "b" \| "c"` | Safe |
-| New definitions | New `def`/`class`/`import`/decorator | Safe |
-| Data entries | New dict/list items (ending with `,`, no control flow) | Safe |
-| New code inside function body | `if`/assignment/function call | **Unsafe** |
+**Step 4: Feature extraction**
 
-> **Why is new code inside function bodies unsafe?** Real case: a commit added an `if` branch in `py_executor_creator.py` that changed the default value of `max_num_tokens_in_buffer`, causing OOM.
+Feature tags are extracted from three sources:
 
-### Parametrized Variant Deduplication
+| Source | Example |
+|--------|---------|
+| Method name pattern matching | `test_eagle3_vswa_reuse_4gpus` → `{eagle3, vswa, reuse, 4gpu}` |
+| Parameter key/value | `cuda_graph=True` → `{cuda_graph}`; `moe_backend=CUTLASS` → `{moe_backend, moe_backend:cutlass}` |
+| Config classes (L3) | `Eagle3DecodingConfig` → `{eagle3}`; `CudaGraphConfig` → `{cuda_graph}` |
+| GPU scale | `_4gpu` / `tp4` in method name → `{4gpu}` / `{tp4}` |
 
-The same `(TestClass, test_method)` often has many parametrized variants, e.g.:
-- `test_bfloat16[mtp_nextn=0-cuda_graph=False]` (no features enabled)
-- `test_bfloat16[mtp_nextn=2-cuda_graph=True]` (all features enabled)
+### 2.3 Final Data Structure — TestEntry
 
-**Two-pass dedup** reduces test count while maintaining coverage:
+```python
+@dataclass
+class TestEntry:
+    test_id: str          # "accuracy/test_llm_api_pytorch.py::TestX::test_y[params]"
+    test_file: str        # "accuracy/test_llm_api_pytorch.py"
+    test_class: str       # "TestDeepSeekV3Lite"
+    test_method: str      # "test_nvfp4"
 
-1. **Per (class, method)**: Among parametrized variants, keep only the **1 variant with the most features** — it exercises the most code paths
-2. **Per TestClass**: Among different test methods of the same class, keep only the **1 method with the most features** — avoids redundant coverage of the same model
+    # L1
+    model_name: str       # "deepseek-ai/DeepSeek-V3-Lite"
+    arch: str             # "deepseek_v2" (from TESTCLASS_TO_ARCH)
 
-Both passes skip CORE, FALLBACK, and NEW_TEST tests (these are always protected).
+    # L2
+    min_sm: int           # 90 (Hopper+)
+    max_sm: int           # 999
+    min_gpu_count: int    # 4
+    min_gpu_memory: int   # 0 (MB)
+    param_dimensions: list[str]   # ["tp_size", "ep_size", "moe_backend"]
+    resolved_params: dict         # {"tp_size": "4", "moe_backend": "CUTLASS"}
+
+    # L3
+    config_classes: set[str]      # {"MoeConfig", "KvCacheConfig"}
+
+    # Combined
+    features: set[str]            # {"nvfp4", "moe", "moe_backend:cutlass"}
+    test_lists: set[str]          # {"llm_function_core"}
+```
+
+The full database is `dict[test_id, TestEntry]`, with ~600+ entries.
 
 ---
 
-## Code Structure and Relationships
+## 3. Impact Rules — Mapping Changed Files to Impact Tiers
 
-4 files with clear responsibilities:
+### 3.1 Tier Definitions
 
-```
-                      ┌─────────────────────────────────────┐
-                      │          impact_rules.py             │
-                      │         (static config)              │
-                      │                                      │
-                      │  "which file path -> which tier"     │
-                      │  "which TestClass -> which arch"     │
-                      │  "which 20 tests = representative"   │
-                      └──────────┬───────────────────────────┘
-                                 │ referenced by
-          ┌──────────────────────┼──────────────────────┐
-          v                      v                      │
-┌──────────────────┐   ┌──────────────────┐             │
-│   parser.py       │   │   selector.py     │             │
-│  (database build) │   │  (core engine)    │             │
-│                   │   │                   │             │
-│ Input:            │   │ Two main funcs:   │             │
-│  test list .txt   │──>│                   │             │
-│  test def .py     │   │ select_tests()    │             │
-│                   │   │  in: database     │             │
-│ Does:             │   │    + changed files │             │
-│  parse test IDs   │   │  out: selected    │             │
-│  AST extraction   │   │       tests       │             │
-│  (arch, features, │   │                   │             │
-│   config_classes) │   │ find_suspects()   │             │
-│                   │   │  in: database     │             │
-│ Output:           │   │    + failing test  │             │
-│  test database    │   │    + good/bad ref  │             │
-│  (dict/JSON)      │   │  out: suspect     │             │
-│                   │   │    commits + PRs   │             │
-└──────────────────┘   └──────────────────┘             │
-          │                      │                      │
-          └──────────┬───────────┘                      │
-                     v                                  │
-            ┌──────────────────┐                        │
-            │     cli.py        │────────────────────────┘
-            │  (CLI entry point)│
-            │                   │
-            │ Calls parser to   │
-            │ build database,   │
-            │ then dispatches   │
-            │ to selector       │
-            └──────────────────┘
+| Tier | Name | Meaning | Test Selection Strategy |
+|------|------|---------|------------------------|
+| **0** | CORE | Core infrastructure; changes may affect all tests | Run **Representative Coverage Set** (~20 tests covering all arch × feature × GPU scale) |
+| **1** | DEFAULT_ON | On-by-default but configurable features | Run tests that **explicitly configure the feature** + Representative Set |
+| **2** | OPT_IN | Features requiring explicit opt-in | Run **only** tests that use the feature (matched via config_class or feature tag) |
+| **3** | MODEL | Model-specific code | Run **all tests for that architecture** |
+| **4** | TEST | Test file itself was changed | Run tests for the **specifically changed classes/methods** in that file (via git diff hunk analysis) |
+| **5** | IGNORE | No impact (docs, CI config, etc.) | Select no tests |
+
+### 3.2 Rule Format
+
+```python
+ImpactRule(
+    pattern="tensorrt_llm/_torch/speculative/eagle3.py",  # glob pattern
+    tier=Tier.OPT_IN,
+    feature="eagle3",                    # feature name (for Tier 1/2)
+    config_class="Eagle3DecodingConfig", # Config class name (for Tier 2)
+    arch=None,                           # architecture name (for MODEL tier)
+    description="Eagle3 speculative decoding",
+)
 ```
 
-**Core data flow:**
+Matching logic: `fnmatch(changed_file, rule.pattern)` — a single file can match multiple rules.
 
-```
-parser builds database ("what does each test cover")
-    +
-impact_rules defines rules ("what does each file change affect")
-    +
-git diff / git log ("what actually changed")
-    ||
-    vv
-selector matches ("which tests are affected" or "which commit is most suspicious")
-```
+### 3.3 Additive-Only Optimization
 
-Key point: **the database does not contain impact rules**. The parser only answers "what model/features does this test cover", and impact rules only answer "what tier does this file path belong to". They are combined at runtime in the selector.
+For high-impact tiers (CORE / DEFAULT_ON / OPT_IN / MODEL), if the file's diff is **purely additive**, the rule is skipped. Criteria:
+
+- **Extension pattern**: every deleted line is a substring of some added line (`"a"|"b"` → `"a"|"b"|"c"`)
+- **Safe additions**: purely new `def`/`class` definitions, `import` statements, data structure entries (ending with `,`)
+- **Comments/blank lines**: comment-only changes
+
+**Unsafe**: new code inside existing function bodies (if/else, assignments, function calls, etc.)
+
+### 3.4 Maintaining Impact Rules
+
+**Adding a new source path:**
+1. Add an `ImpactRule` entry to the `IMPACT_RULES` list
+2. Choose the correct tier:
+   - Used by all tests → CORE
+   - On by default, some tests explicitly configure it → DEFAULT_ON (specify feature + config_class)
+   - Requires explicit opt-in → OPT_IN (specify feature + config_class)
+   - Model implementation code → MODEL (specify arch)
+   - Test definition file → TEST
+   - Docs/CI → IGNORE
+
+**Adding a new model architecture:**
+1. Add MODEL rules to `IMPACT_RULES` (source path → arch)
+2. Add TestClass → arch mapping to `TESTCLASS_TO_ARCH`
+3. Add model name keywords → arch mapping to `MODEL_NAME_TO_ARCH` (for module-level tests like test_e2e.py)
+4. Add at least 1 test for this architecture to `REPRESENTATIVE_COVERAGE_SET`
+
+**Adding a new opt-in feature:**
+1. Add OPT_IN rule (source path → feature + config_class)
+2. If a Config class exists, add it to `_KNOWN_CONFIG_CLASSES` in `parser.py`
+3. Add feature → config class mapping to `FEATURE_TO_CONFIG`
+4. Add 1 coverage test to `REPRESENTATIVE_COVERAGE_SET`
+5. If needed, add method name patterns to `_METHOD_FEATURE_PATTERNS`
 
 ---
 
-## Usage
+## 4. Selector — Test Selection Logic
 
-### Test Selection
+### 4.1 Rule-Based Selection
+
+Each `(changed_file, rule)` match is dispatched to a tier-specific handler:
+
+| Tier | Handler | Selection Logic |
+|------|---------|----------------|
+| CORE | `_select_by_core` | Select all tests in `REPRESENTATIVE_COVERAGE_SET` |
+| DEFAULT_ON | `_select_by_default_on` | Select tests matching config_class or feature **+** Representative Set |
+| OPT_IN | `_select_by_opt_in` | Select **only** tests matching config_class or feature. Special handling: `speculative` matches all spec decoding tests; `quantization` matches all quantization tests |
+| MODEL | `_select_by_model` | Select all tests where `entry.arch == rule.arch`. Also supports module-level functions via `entry.model_names` matching |
+| TEST | `_select_by_test` | **Method-level precision**: analyze git diff hunks to locate specifically changed classes and methods, three-level matching (see below) |
+
+#### TEST Tier Method-Level Precision
+
+The TEST tier uses `_get_changed_classes_in_test_file` to analyze git diff hunks, returning three-level change information (`_TestFileChanges`):
+
+| Level | Condition | Selection Scope |
+|-------|-----------|----------------|
+| `class_methods` | Changed lines fall within a specific `def test_*` method inside a class | Select **only that method's** parametrized variants |
+| `class_wide` | Changed lines are inside a class but not within any test method (e.g. class attributes, setUp) | Select **all methods of that class** |
+| `select_all` | Cannot determine (e.g. diff parse failure) | Select **all tests in that file** |
+
+Module-level code (outside any class) gets additional analysis: if it only adds new function/class definitions it is safely skipped; otherwise it triggers `select_all`.
+
+**Reason tag formats**:
+- Method-level: `TEST method=TestClass::test_method modified in file.py`
+- Class-level: `TEST class=TestClass modified in file.py`
+- File-level: `TEST file=file.py (all classes)`
+
+### 4.2 Supplementary Selection
+
+After rule matching, two special selection types are applied:
+
+**FALLBACK (unmatched source files):**
+If any `.py/.cpp/.h/.cu` source files did not match any rule, safe fallback: select the Representative Coverage Set.
+
+**NEW_TEST (new lines in test lists):**
+Parse git diff of `tests/integration/test_lists/qa/*.txt`; lines starting with `+` are newly added tests and are directly selected. New tests must be run to verify they pass.
+
+> **About waives.txt changes**: Un-waived tests (lines removed from waives.txt) are no longer force-selected. Bug closure already requires main-branch verification that the test passes, so un-waived tests don't need special treatment in nightly. They participate via normal rules if matched, and weekly full runs provide the safety net.
+
+### 4.3 Exclude Known Failures (Waive Exclusion)
+
+**Before** deduplication, tests currently listed in `waives.txt` are filtered out.
+
+**Why**: Waived tests are known failures (with corresponding NVBugs). Running them wastes time and resources. Removing them frees budget for other valid tests, improving coverage.
+
+**Matching**:
+- **Exact match**: waive entries with parameters `[...]` exclude only that specific variant
+- **Prefix match**: waive entries without parameters (e.g. `TestClass::test_method`) exclude all parametrized variants of that method
+
+**Why before dedup**: If waived tests are removed before dedup, the greedy coverage algorithms work with a larger pool of valid tests, producing better coverage. If done after dedup, waived tests may have occupied dedup slots and crowded out better tests.
+
+| waives.txt status | Meaning | Action |
+|---|---|---|
+| Currently in waives.txt | Known bug, will fail | **Exclude** — don't waste resources |
+| Removed from waives.txt (diff `-`) | Bug fixed, verified on main | No special treatment; normal rules + weekly safety net |
+| Added to waives.txt (diff `+`) | Newly discovered failure | Not selected |
+
+### 4.4 Deduplication Logic
+
+After waive exclusion, two deduplication passes reduce test count:
+
+#### Pass 1: Parametrized Variant Dedup (`_deduplicate_parametrized`)
+
+**Scope**: different parametrized variants of the same `(test_class, test_method)`.
+
+**Algorithm**: Greedy Tag Coverage
+1. For each variant, extract parameter tags (e.g. `moe_backend=cutlass`, `cuda_graph`, `tp_size`)
+2. Greedy selection: each iteration picks the variant contributing the most new tags
+3. Stop when no variant can contribute new tags
+
+**Effect**: e.g. `test_bfloat16` with 8 variants (different cuda_graph/overlap/torch_compile combos) is reduced to 3-4 variants covering all parameter dimensions.
+
+**Exemptions**: Tests tagged CORE, FALLBACK, or NEW_TEST are exempt from dedup. Tests in the Representative Coverage Set are never removed.
+
+#### Pass 2: Intra-Class Method Dedup (`_deduplicate_per_class`)
+
+**Scope**: different `test_method`s within the same `test_class`.
+
+**Unified strategy**: all tiers (MODEL, OPT_IN, DEFAULT_ON) use the **Greedy Feature Coverage** algorithm.
+
+**Greedy Feature Coverage algorithm:**
+1. Compute the feature union for each method (merge features across all its parametrized variants)
+2. Greedy selection: each iteration picks the method contributing the most new features
+3. Stop when no method can contribute new features
+4. All parametrized variants of retained methods are kept
+
+**Example**: `TestGPTOSS` has `test_w4_1gpu`, `test_eagle3_4gpus`, `test_eagle3_vswa_reuse_4gpus`, etc. `vswa` and `reuse` are unique features, so they won't be subsumed by `test_eagle3_4gpus`.
+
+**Exemptions**: Tests tagged CORE, FALLBACK, or NEW_TEST are exempt. Tests tagged TEST (directly modified test methods) are also exempt — they are precise matches of changed methods and don't need dedup. Tests in the Representative Coverage Set are never removed.
+
+---
+
+## 5. Time Budget — Duration-Based Trimming
+
+After deduplication, if `--time-budget` is specified (default 8h), tests are further trimmed to fit the estimated total runtime within the budget.
+
+### 5.1 Duration Data Source
+
+Test durations come from the `tests/integration/defs/.test_durations` file (JSON format, key = test ID, value = seconds). Tests without duration records use the **median duration of currently selected tests** as the default.
+
+### 5.2 Scope
+
+When `--test-list` is specified (e.g. `llm_function_core`), budget trimming **only applies to tests in that test list**. Tests not in the target list are excluded from total duration calculations and are never dropped.
+
+### 5.3 Protected Tests
+
+The following tests are **never dropped by the budget**:
+
+| Protection Type | Reason |
+|----------------|--------|
+| **REPRESENTATIVE_COVERAGE_SET** | Core arch × feature coverage, cannot be omitted |
+| **NEW_TEST** | New tests must be validated to pass |
+
+Note: `TEST method=` (methods directly modified in test files) is **not protected**. While they have higher selection priority, they will be trimmed if a single test's duration is excessive — test code changes can be verified in subsequent CI runs.
+
+### 5.4 Trimming Algorithm
+
+Two phases: first remove outliers, then greedily trim.
+
+#### Phase 0: Outlier Removal
+
+Drop any single test whose duration exceeds **budget × 25%** (protected tests excluded).
+
+**Purpose**: an 18-hour test is pointless under an 8-hour budget — it should be dropped regardless of feature coverage.
+
+**Threshold**: `max_single = budget_seconds × 0.25`
+- 8h budget → single test cap of 2h
+- 4h budget → single test cap of 1h
+
+After Phase 0, check total duration. If already within budget, stop.
+
+#### Phase 1: Greedy Lowest-Value Removal
+
+If total duration still exceeds budget after Phase 0, enter a greedy loop:
+
+```
+while total > budget:
+    1. Build feature → {test_ids} mapping
+    2. For each droppable test, compute unique_feature_count:
+       = number of features covered by this test that NO other test covers
+    3. Pick the test with the smallest unique_feature_count
+       (tie-break: pick the longest duration to maximize savings)
+    4. Drop that test
+```
+
+**Core strategy**: each iteration drops the test that is "most easily replaced" by others. If all features of a test are also covered by other tests (unique = 0), it is the best candidate. Among equally replaceable tests, the longest one is dropped first to maximize time savings.
+
+**Termination**: total duration ≤ budget, or all non-protected tests have been dropped.
+
+### 5.5 Budget May Be Exceeded
+
+When protected tests alone exceed the budget, the budget is **best-effort** — it will not drop NEW_TEST or REPRESENTATIVE tests to meet the target. The CLI output clearly indicates this:
+
+```
+Time budget: 8.0h, estimated: 10.9h (OVER by 2.9h (protected tests)), dropped 157 tests (84.8h saved)
+```
+
+### 5.6 CLI Parameters
 
 ```bash
-# Basic: select tests based on git diff
-python -m tests.scripts.change_based_test_selection.cli --base-ref main
-
-# Show selection reasons
-python -m tests.scripts.change_based_test_selection.cli --base-ref main --explain
-
-# Filter to a specific test list
+# Default 8-hour budget
 python -m tests.scripts.change_based_test_selection.cli --base-ref main --test-list llm_function_core
 
+# Specify 4-hour budget
+python -m tests.scripts.change_based_test_selection.cli --base-ref main --test-list llm_function_core --time-budget 4h
+
+# Plain numbers are treated as hours (4 = 4h)
+python -m tests.scripts.change_based_test_selection.cli --time-budget 4
+
+# Minutes/seconds also supported
+python -m tests.scripts.change_based_test_selection.cli --time-budget 480m
+python -m tests.scripts.change_based_test_selection.cli --time-budget 28800s
+
+# Disable budget trimming
+python -m tests.scripts.change_based_test_selection.cli --time-budget 0
+```
+
+---
+
+## 6. Output
+
+### 6.1 Group Priority
+
+Output is grouped by reason, from highest to lowest priority:
+
+| Priority | Group | Meaning |
+|----------|-------|---------|
+| 0 | NEW_TEST | Newly added tests |
+| 1 | MODEL: {arch} | Model code changes |
+| 2 | TEST: {class} modified | Test file changes |
+| 3 | OPT_IN: {feature} | Opt-in feature changes |
+| 4 | DEFAULT_ON: {feature} | Default-on feature changes |
+| 5 | Representative coverage set | CORE infrastructure changes |
+| 6 | FALLBACK | Unmatched fallback |
+
+Within the same priority, groups are sorted by test count (descending), then alphabetically.
+
+### 6.2 Output Format
+
+```
+# NEW_TEST: newly added to test list (36 tests)
+accuracy/test_llm_api_pytorch.py::TestNewClass::test_foo
+...
+
+# MODEL: llama (52 tests)
+accuracy/test_llm_api_pytorch.py::TestLlama3_1_8BInstruct::test_eagle3[...]
+...
+```
+
+### 6.3 CLI Usage
+
+```bash
+# Basic: diff against base-ref, select tests for a specific test list
+python -m tests.scripts.change_based_test_selection.cli \
+  --base-ref 460889fa --test-list llm_function_core -o selected.txt
+
+# Explain mode: show why each test was selected
+python -m tests.scripts.change_based_test_selection.cli \
+  --base-ref main --explain
+
 # Specify files directly (no git diff)
-python -m tests.scripts.change_based_test_selection.cli --files tensorrt_llm/models/llama/model.py
-
-# Show statistics
-python -m tests.scripts.change_based_test_selection.cli --files tensorrt_llm/_torch/speculative/eagle3.py --stats
-
-# Cache database (speeds up repeated queries)
-python -m tests.scripts.change_based_test_selection.cli --dump-db test_db.json
-python -m tests.scripts.change_based_test_selection.cli --load-db test_db.json --files ...
-```
-
-### Output Format
-
-Tests are grouped by selection reason. **NEW_TEST** group always appears first for visibility:
-
-```
-# NEW_TEST: newly added to test list (5 tests)
-accuracy/test_llm_api_pytorch.py::TestNewModel::test_auto_dtype
-...
-
-# Representative coverage set (core infrastructure change) (17 tests)
-accuracy/test_llm_api_pytorch.py::TestLlama3_1_8BInstruct::test_ngram
-...
-
-# MODEL: llama (10 tests)
-...
-
-# DEFAULT_ON: kv_cache (22 tests)
-...
-```
-
-### Reverse Suspect Analysis
-
-```bash
-# Basic usage
 python -m tests.scripts.change_based_test_selection.cli \
-    --suspect \
-    --good-ref <last known good commit SHA> \
-    --bad-ref <first known bad commit SHA> \
-    --test-id <failing test ID>
+  --files tensorrt_llm/models/llama/model.py
 
-# Real example: OOM regression
+# Export/load database cache
+python -m tests.scripts.change_based_test_selection.cli --dump-db db.json
+python -m tests.scripts.change_based_test_selection.cli --load-db db.json --files ...
+
+# Reverse suspect analysis: given a failing test and commit range, rank suspect commits
 python -m tests.scripts.change_based_test_selection.cli \
-    --suspect \
-    --good-ref 4adf76d8 \
-    --bad-ref a9d49272 \
-    --test-id "accuracy/test_disaggregated_serving.py::TestLlama3_1_8BInstruct::test_ngram"
+  --suspect --good-ref abc123 --bad-ref def456 \
+  --test-id "TestLlama3_1_8BInstruct::test_ngram"
 ```
-
-Output example:
-
-```
-=== Reverse Suspect Analysis ===
-Failing test: accuracy/test_disaggregated_serving.py::TestLlama3_1_8BInstruct::test_ngram
-Commits analyzed: 17
-
---- SUSPECTS (6) ---                    <-- Non-safe changes that hit relevant code paths
-  #1 0d18b2d7a4 Add priority-based KV cache offload filtering support (#10751)
-      PR: https://github.com/NVIDIA/TensorRT-LLM/pull/10751
-      CORE [core] <- py_executor_creator.py
-      DEFAULT_ON [kv_cache] <- kv_cache_connector.py
-  #4 a9d4927235 set default val of max_num_tokens_in_buffer (#11082)    <-- root cause
-      PR: https://github.com/NVIDIA/TensorRT-LLM/pull/11082
-      CORE [core] <- py_executor_creator.py
-
---- ADDITIVE-ONLY (1) ---              <-- Relevant code path but safe diff pattern
-  ~ a7494a5ff4 Remove outdated comment in model_engine.py (#11240)
-
---- CLEAR (10) ---                      <-- Changes unrelated to this test
-  . 36cb5f8c93 Fix multimodal serve test
-  . 4c1d9d0c10 Pass without_comm to cutlass and deepgemm
-  ...
-```
-
-**Workflow: get SUSPECTS list -> click PR links to review diffs -> manually identify root cause.**
-In this example, 17 commits narrowed to 6 suspects; clicking PR #11082 immediately reveals the buffer default value change.
 
 ---
 
-## How Reverse Suspect Analysis Works
+## 7. Automatic Maintenance Warnings
 
-Suspect analysis does **not** look at which source files the failing test executes. Instead, it uses impact rules as a **reverse matching** layer:
-
-**Step 1: Extract the failing test's "profile"**
-
-Look up the test in the database for its model architecture, features, config classes, and test file:
+On every run, the CLI automatically checks whether configuration needs updating and prints warnings to stderr:
 
 ```
-TestLlama3_1_8BInstruct::test_ngram (test_disaggregated_serving.py)
-  arch:           llama
-  features:       {ngram}
-  config_classes: {NGramDecodingConfig}
+⚠ Maintenance warnings (4 issues):
+  [RULE] 12 source file(s) matched no impact rule ...
+  [ARCH] 3 test class(es) have no architecture mapping ...
+  [REP] 2 architecture(s) have no test in REPRESENTATIVE_COVERAGE_SET ...
+  [FEAT] 87 tests have no extracted features ...
 ```
 
-**Step 2: For each commit, ask "did you change something relevant to this test?"**
-
-For each commit in the good..bad range, get its changed files and check relevance via impact rules:
-
-```
-commit A modified speculative/eagle3.py
-  -> Matches rule: OPT_IN, feature=eagle3
-  -> Failing test uses ngram, not eagle3
-  -> Not relevant -> CLEAR
-
-commit B modified pyexecutor/py_executor_creator.py
-  -> Matches rule: CORE
-  -> CORE is relevant to all tests
-  -> Check diff: changed max_num_tokens_in_buffer default (not a safe pattern)
-  -> SUSPECT
-
-commit C modified pyexecutor/model_engine.py
-  -> Matches rule: CORE (relevant)
-  -> But diff only removed a comment (safe pattern)
-  -> ADDITIVE-ONLY
-```
-
-**Relevance rules:**
-
-| Commit's matched tier | When is it relevant to the failing test |
-|-----------------------|----------------------------------------|
-| CORE / DEFAULT_ON | **Always relevant** (these code paths affect all tests) |
-| OPT_IN | Only when the rule's feature/config_class matches the test's features/config_classes |
-| MODEL | Only when the rule's arch matches the test's arch |
-| TEST | Only when the modified file matches the test's test_file |
-| IGNORE | Never relevant |
-
-**Step 3: Classify and rank**
-
-- **SUSPECT**: Changed relevant code path, diff is not a safe pattern (most suspicious)
-- **ADDITIVE-ONLY**: Changed relevant code path, but diff is comments/definitions/data only (low risk)
-- **CLEAR**: Changes are unrelated to this test
+| Tag | What It Detects | Maintenance Action |
+|-----|----------------|-------------------|
+| **[RULE]** | Changed source files matched no impact rule (FALLBACK triggered) | Add rules for those paths in `IMPACT_RULES` |
+| **[ARCH]** | Test classes in the database have no architecture mapping in `TESTCLASS_TO_ARCH` | Add TestClass → arch mapping |
+| **[REP]** | An architecture exists in the database but has no test in `REPRESENTATIVE_COVERAGE_SET` | Add at least 1 representative test for that architecture |
+| **[FEAT]** | Many tests have no extracted features (affects dedup and budget quality) | Check `_METHOD_FEATURE_PATTERNS`, `_PARAM_FEATURES`, `_KNOWN_CONFIG_CLASSES` |
 
 ---
 
-## Scenario Examples
+## 8. Maintenance Quick Reference
 
-| Scenario | Changed File | Tier | Result |
-|----------|-------------|------|--------|
-| Eagle3 code change | `speculative/eagle3.py` | OPT_IN | 59/616 (9.6%) — only Eagle3 tests |
-| DeepSeek model change | `models/deepseek_v2/model.py` | MODEL | 145/616 (23.5%) — all DeepSeek/Kimi (deduped) |
-| LLM API core change | `llmapi/llm.py` | CORE | 20/616 (3.2%) — representative set |
-| Mixed changes | Qwen model + MTP feature | MODEL + OPT_IN | 168/616 (27.3%) — Qwen + MTP |
-
----
-
-## CI Integration
-
-### Nightly Pipeline
-
-```bash
-# In CI script:
-python -m tests.scripts.change_based_test_selection.cli \
-    --base-ref main \
-    --test-list llm_function_core \
-    -o /tmp/nightly_tests.txt
-
-# Run only selected tests
-pytest $(cat /tmp/nightly_tests.txt | tr '\n' ' ')
-```
-
-### Scheduling Strategy
-
-| Frequency | What to Run |
-|-----------|-------------|
-| Nightly | CBTS-selected subset |
-| Weekly | Full core + rtx6k + multinode |
-| Monthly | Full regression (including stress) |
-
----
-
-## Maintenance Guide
-
-### Adding a New Model
-
-1. Add `TestClass` -> arch mapping in `impact_rules.py` `TESTCLASS_TO_ARCH`
-2. If it's a new architecture, add a corresponding `ImpactRule` (MODEL tier)
-3. Add a representative test to `REPRESENTATIVE_COVERAGE_SET`
-
-### Adding a New Feature
-
-1. `parser.py`: Add feature extraction rules in `_METHOD_FEATURE_PATTERNS` or `_PARAM_FEATURES`
-2. `parser.py`: Add Config class mapping in `_KNOWN_CONFIG_CLASSES` and `_CONFIG_FEATURES`
-3. `impact_rules.py`: Add an `ImpactRule` (OPT_IN tier)
-4. `impact_rules.py`: Add a representative test to `REPRESENTATIVE_COVERAGE_SET`
-
-### Debugging
-
-```bash
-# Test selection: see why each test was selected
-python -m tests.scripts.change_based_test_selection.cli --files <file> --explain
-
-# Suspect analysis: if the root cause commit was missed, check:
-# 1. Does the file have a corresponding ImpactRule?
-# 2. Does the rule's feature/arch match the failing test?
-# 3. Did the additive-only filter incorrectly classify the diff as safe?
-```
+| Scenario | What to Change |
+|----------|---------------|
+| Add a new model architecture | `IMPACT_RULES` + `TESTCLASS_TO_ARCH` + `MODEL_NAME_TO_ARCH` + `REPRESENTATIVE_COVERAGE_SET` |
+| Add a new opt-in feature | `IMPACT_RULES` + `_KNOWN_CONFIG_CLASSES` + `FEATURE_TO_CONFIG` + `REPRESENTATIVE_COVERAGE_SET` |
+| Add a new core source path | Add a CORE rule to `IMPACT_RULES` |
+| New method name feature keyword | `_METHOD_FEATURE_PATTERNS` |
+| New parameter feature keyword | `_PARAM_FEATURES` |
+| Add a new test definition file | Add a TEST rule to `IMPACT_RULES` |
+| Add a new Config class | `_KNOWN_CONFIG_CLASSES` + `_CONFIG_FEATURES` |

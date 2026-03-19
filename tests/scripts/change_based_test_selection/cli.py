@@ -106,6 +106,15 @@ def main():
         help="Write selected test IDs to this file (default: stdout).",
     )
 
+    # Time budget
+    p.add_argument(
+        "--time-budget",
+        default="8h",
+        help="Maximum total test duration (default: 8h). Accepts formats "
+        "like '8h', '480m', '28800s', or plain hours (e.g. '8' = 8h). Use '0' to disable. "
+        "Tests are dropped by lowest feature value until budget is met.",
+    )
+
     # Database caching
     p.add_argument(
         "--dump-db",
@@ -217,16 +226,40 @@ def main():
         print(f"  ... and {len(changed_files) - 20} more", file=sys.stderr)
     print(file=sys.stderr)
 
+    # Parse time budget
+    time_budget = 0.0
+    if args.time_budget:
+        budget_str = args.time_budget.strip().lower()
+        if budget_str.endswith('h'):
+            time_budget = float(budget_str[:-1]) * 3600
+        elif budget_str.endswith('m'):
+            time_budget = float(budget_str[:-1]) * 60
+        elif budget_str.endswith('s'):
+            time_budget = float(budget_str[:-1])
+        else:
+            # Plain number defaults to hours (consistent with default "8h")
+            time_budget = float(budget_str) * 3600
+
     # Select tests
     from .selector import (
+        apply_time_budget,
         compute_stats,
         format_explain,
         format_output,
+        generate_maintenance_warnings,
         select_tests,
+        _load_durations,
     )
 
     result = select_tests(database, changed_files,
-                          base_ref=args.base_ref or "")
+                          base_ref=args.base_ref or "",
+                          repo_root=str(repo_root))
+
+    # Apply time budget if specified
+    if time_budget > 0:
+        durations = _load_durations(str(repo_root))
+        apply_time_budget(result, time_budget, durations,
+                          test_list_filter=args.test_list)
 
     # Output
     if args.explain:
@@ -238,8 +271,11 @@ def main():
         output = format_output(result, test_list_filter=args.test_list)
         if args.output:
             Path(args.output).write_text(output + '\n')
+            test_count = sum(
+                1 for line in output.splitlines()
+                if line and not line.startswith('#'))
             print(
-                f"Wrote {len(output.splitlines())} test IDs to {args.output}",
+                f"Wrote {test_count} test IDs to {args.output}",
                 file=sys.stderr,
             )
         else:
@@ -251,6 +287,30 @@ def main():
         f"({len(result.selected_tests)/len(database)*100:.1f}%)",
         file=sys.stderr,
     )
+    budget_info = getattr(result, '_budget_info', None)
+    if budget_info:
+        remaining = budget_info['remaining_time']
+        budget = budget_info['budget']
+        over = remaining > budget
+        status = (f"OVER by {(remaining - budget)/3600:.1f}h "
+                  f"(protected tests)" if over else "within budget")
+        print(
+            f"Time budget: {budget/3600:.1f}h, "
+            f"estimated: {remaining/3600:.1f}h ({status}), "
+            f"dropped {budget_info['dropped']} tests "
+            f"({budget_info['dropped_time']/3600:.1f}h saved)",
+            file=sys.stderr,
+        )
+
+    # Maintenance warnings — highlight config issues that need attention
+    maint_warnings = generate_maintenance_warnings(result, database)
+    if maint_warnings:
+        # Count top-level warnings (lines starting with [TAG])
+        issue_count = sum(1 for w in maint_warnings if w.startswith('['))
+        print(f"\n⚠ Maintenance warnings ({issue_count} issues):",
+              file=sys.stderr)
+        for w in maint_warnings:
+            print(f"  {w}", file=sys.stderr)
 
 
 if __name__ == "__main__":
