@@ -49,7 +49,6 @@ def main() -> int:
     target_ref = os.environ.get("TARGET_REF", "origin/main").strip()
     commits_limit = _env_int("COMMITS_BEHIND_LIMIT", 200)
     age_limit_days = _env_int("BASE_AGE_LIMIT_DAYS", 14)
-    skip_label_applied = _env_bool("SKIP_LABEL_APPLIED")
     enforce = _env_bool("ENFORCE")
 
     if not pr_head:
@@ -104,16 +103,8 @@ def main() -> int:
 
     guidance = (
         "To resolve: rebase onto the target branch (preferred) or merge it into this "
-        "branch, then push again. If this PR must keep its current base, apply the "
-        "`skip-stale-base-check` label (requires write permission)."
+        "branch, then push again."
     )
-
-    if skip_label_applied:
-        print(
-            f"::notice::PR base is stale ({reason_str}), but "
-            "`skip-stale-base-check` label is applied; bypassing."
-        )
-        return 0
 
     if not enforce:
         print(
