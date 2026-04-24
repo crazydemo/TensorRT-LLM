@@ -17,7 +17,17 @@ name: PR Base Freshness
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+    # auto_merge_enabled is important: a PR that was fresh when opened can
+    # sit in review long enough for main to fly ahead. Clicking "Enable
+    # auto-merge" would otherwise trust a stale cached check result.
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
+      - unlabeled
+      - auto_merge_enabled
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
