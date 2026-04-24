@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: PR Base Freshness
+
+on:
+  pull_request:
+    # auto_merge_enabled is important: a PR that was fresh when opened can
+    # sit in review long enough for main to fly ahead. Clicking "Enable
+    # auto-merge" would otherwise trust a stale cached check result.
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
+      - unlabeled
+      - auto_merge_enabled
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  base-freshness:
+    name: PR Base Freshness
+    runs-on: ubuntu-latest
+    # Skip draft PRs — they are still being iterated on. Real merges happen
+    # after ready_for_review (which is in the trigger list), so the check will
+    # run then.
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout PR head with full history
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Fetch target branch
+        env:
+          TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Check PR base freshness
+        # Thresholds and enforcement are driven by repo-level Actions
+        # variables so they can be tuned via Settings -> Secrets and
+        # variables -> Actions -> Variables, without editing this file.
+        # Fallback literals below are the phase 1 (warn-only) starting
+        # values and take effect when a variable is not set.
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TARGET_REF: origin/${{ github.event.pull_request.base.ref }}
+          COMMITS_BEHIND_LIMIT: ${{ vars.PR_BASE_FRESHNESS_COMMITS_LIMIT || '150' }}
+          BASE_AGE_LIMIT_DAYS: ${{ vars.PR_BASE_FRESHNESS_AGE_LIMIT_DAYS || '10' }}
+          SKIP_LABEL_APPLIED: ${{ contains(github.event.pull_request.labels.*.name, 'skip-stale-base-check') }}
+          # Set repo variable PR_BASE_FRESHNESS_ENFORCE='true' to turn this
+          # from warn-only into a blocking required check.
+          ENFORCE: ${{ vars.PR_BASE_FRESHNESS_ENFORCE || 'false' }}
+        run: python3 .github/scripts/pr_base_freshness_check.py
