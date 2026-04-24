@@ -25,8 +25,6 @@ on:
       - synchronize
       - reopened
       - ready_for_review
-      - labeled
-      - unlabeled
       - auto_merge_enabled
 
 concurrency:
@@ -101,7 +99,6 @@ jobs:
           TARGET_REF: origin/${{ github.event.pull_request.base.ref }}
           COMMITS_BEHIND_LIMIT: ${{ vars.PR_BASE_FRESHNESS_COMMITS_LIMIT || '150' }}
           BASE_AGE_LIMIT_DAYS: ${{ vars.PR_BASE_FRESHNESS_AGE_LIMIT_DAYS || '10' }}
-          SKIP_LABEL_APPLIED: ${{ contains(github.event.pull_request.labels.*.name, 'skip-stale-base-check') }}
           # Set repo variable PR_BASE_FRESHNESS_ENFORCE='true' to turn this
           # from warn-only into a blocking required check.
           ENFORCE: ${{ vars.PR_BASE_FRESHNESS_ENFORCE || 'false' }}
