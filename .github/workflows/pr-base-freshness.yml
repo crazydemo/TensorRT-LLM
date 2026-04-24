@@ -42,17 +42,24 @@ jobs:
     # run then.
     if: github.event.pull_request.draft == false
     steps:
-      - name: Checkout PR head with full history
+      # Check out the target branch (not the PR head) so that the check
+      # script under .github/scripts/ is guaranteed to exist even when the
+      # PR was branched off a commit that predates this workflow. The
+      # script is only ever read, never executed against PR code.
+      - name: Checkout target branch with full history
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0
 
-      - name: Fetch target branch
+      # Fetch the PR head commit into a local ref so git merge-base can
+      # reach it. Using refs/pull/N/head works for both same-repo and
+      # fork PRs.
+      - name: Fetch PR head commit
         env:
-          TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          git fetch --no-tags origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+          git fetch --no-tags origin "+refs/pull/${PR_NUMBER}/head:refs/remotes/origin/pr-head"
 
       - uses: actions/setup-python@v6
         with:
