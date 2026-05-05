@@ -434,7 +434,7 @@ unittest/llmapi/test_llm_pytorch.py::test_llm_disagg_streaming_gen_cancelled SKI
 unittest/llmapi/test_memory_profiling.py::test_profile_kvcache SKIP (https://nvbugs/5580781)
 unittest/llmapi/test_mpi_session.py::test_llmapi_launch_multiple_tasks SKIP (https://nvbugs/5819014)
 unittest/tools/test_layer_wise_benchmarks.py::test_performance_alignment[1] SKIP (https://nvbugs/6127669)
-unittest/trt/functional/test_fp4_gemm.py SKIP (https://nvbugs/9999002)
+unittest/trt/attention/test_bert_attention.py SKIP (https://nvbugs/9999002)
 verl/test_verl_cases.py::test_adapter SKIP (https://nvbugs/5981833)
 verl/test_verl_cases.py::test_async_server SKIP (https://nvbugs/5981833)
 verl/test_verl_cases.py::test_rollout_utils SKIP (https://nvbugs/5981833)
