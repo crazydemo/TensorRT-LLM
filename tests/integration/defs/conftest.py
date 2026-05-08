@@ -56,6 +56,9 @@ try:
 except ImportError:
     trt_environment = None
 
+# Register CBTS feature logger plugin (see _feature_logger.py).
+pytest_plugins = ("defs._feature_logger", )
+
 # Logger
 logger = logging.getLogger(__name__)
 
