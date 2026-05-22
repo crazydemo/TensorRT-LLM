@@ -267,7 +267,7 @@ def verify_disaggregated(model, generation_overlap, enable_cuda_graph, prompt,
 
     with MPIPoolExecutor(max_workers=2,
                          env={
-                             "UCX_TLS": "^ib,gdr_copy",
+                             "UCX_TLS": "^ib,gdr_copy,cuda_ipc",
                              "UCX_MM_ERROR_HANDLING": "y"
                          }) as executor:
         futures = []
@@ -416,7 +416,7 @@ def test_disaggregated_llama_context_capacity(model, enable_cuda_graph,
 
     with MPIPoolExecutor(max_workers=2,
                          env={
-                             "UCX_TLS": "^ib,gdr_copy",
+                             "UCX_TLS": "^ib,gdr_copy,cuda_ipc",
                              "UCX_MM_ERROR_HANDLING": "y"
                          }) as executor:
         futures = []
@@ -527,7 +527,7 @@ def test_disaggregated_spec_dec_batch_slot_limit(model, spec_dec_model_path,
     mpi_info.Set("oversubscribe", "true")
     with MPIPoolExecutor(max_workers=2,
                          env={
-                             "UCX_TLS": "^ib,gdr_copy",
+                             "UCX_TLS": "^ib,gdr_copy,cuda_ipc",
                              "UCX_MM_ERROR_HANDLING": "y",
                              "OMPI_MCA_rmaps_base_oversubscribe": "1"
                          },
@@ -618,7 +618,7 @@ def test_disaggregated_logprobs(model, generation_overlap):
 
     with MPIPoolExecutor(max_workers=2,
                          env={
-                             "UCX_TLS": "^ib,gdr_copy",
+                             "UCX_TLS": "^ib,gdr_copy,cuda_ipc",
                              "UCX_MM_ERROR_HANDLING": "y"
                          }) as executor:
         futures = []
@@ -727,7 +727,7 @@ def test_disaggregated_cancel_gen_requests(model):
 
     with MPIPoolExecutor(max_workers=2,
                          env={
-                             "UCX_TLS": "^ib,gdr_copy",
+                             "UCX_TLS": "^ib,gdr_copy,cuda_ipc",
                              "UCX_MM_ERROR_HANDLING": "y",
                          }) as executor:
         futures = []
@@ -833,7 +833,7 @@ def test_disaggregated_logits(model, generation_overlap):
 
     with MPIPoolExecutor(max_workers=2,
                          env={
-                             "UCX_TLS": "^ib,gdr_copy",
+                             "UCX_TLS": "^ib,gdr_copy,cuda_ipc",
                              "UCX_MM_ERROR_HANDLING": "y"
                          }) as executor:
         futures = []

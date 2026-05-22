@@ -31,8 +31,8 @@ import pytest
 import yaml
 from defs.common import get_free_port_in_ci as get_free_port
 from defs.common import parse_gsm8k_output, wait_for_server
-from defs.conftest import (get_sm_version, llm_models_root, skip_arm,
-                           skip_no_hopper, skip_pre_blackwell, skip_pre_hopper)
+from defs.conftest import (llm_models_root, skip_arm, skip_no_hopper,
+                           skip_pre_blackwell, skip_pre_hopper)
 from defs.trt_test_alternative import check_call, check_output, print_info
 from disagg_test_utils import (ProcessWrapper, run_ctx_worker,
                                run_disagg_server, run_gen_worker, terminate,
@@ -57,13 +57,8 @@ class TestConfig:
 
 
 def get_ucx_tls():
-    """Get UCX_TLS value based on GPU architecture.
-
-    Pre-Hopper GPUs need cuda_ipc excluded from UCX transports.
-    """
-    if get_sm_version() < 90:
-        return "^cuda_ipc,ib,gdr_copy"
-    return "^ib,gdr_copy"
+    """Default UCX_TLS for disaggregated tests (nvbug 6114140)."""
+    return "^ib,gdr_copy,cuda_ipc"
 
 
 def cleanup_output_files():
@@ -1140,9 +1135,11 @@ def test_disaggregated_ctxtp2_genpp2(disaggregated_test_root, llm_venv,
                                      llama_model_root):
     setup_model_symlink(llm_venv, llama_model_root,
                         "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+    env = llm_venv._new_env.copy()
+    env["UCX_TLS"] = get_ucx_tls()
     run_disaggregated_test(disaggregated_example_root,
                            "ctxtp2_genpp2",
-                           env=llm_venv._new_env,
+                           env=env,
                            model_path=llama_model_root,
                            cwd=llm_venv.get_working_directory())
 
@@ -1170,9 +1167,11 @@ def test_disaggregated_ctxtp2pp2_gentp2pp2(disaggregated_test_root, llm_venv,
                                            llama_model_root):
     setup_model_symlink(llm_venv, llama_model_root,
                         "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+    env = llm_venv._new_env.copy()
+    env["UCX_TLS"] = get_ucx_tls()
     run_disaggregated_test(disaggregated_example_root,
                            "ctxtp2pp2_gentp2pp2",
-                           env=llm_venv._new_env,
+                           env=env,
                            model_path=llama_model_root,
                            cwd=llm_venv.get_working_directory())
 
@@ -1201,9 +1200,11 @@ def test_disaggregated_ctxpp4_gentp4(disaggregated_test_root, llm_venv,
                                      llama_model_root):
     setup_model_symlink(llm_venv, llama_model_root,
                         "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+    env = llm_venv._new_env.copy()
+    env["UCX_TLS"] = get_ucx_tls()
     run_disaggregated_test(disaggregated_example_root,
                            "ctxpp4_gentp4",
-                           env=llm_venv._new_env,
+                           env=env,
                            model_path=llama_model_root,
                            cwd=llm_venv.get_working_directory())
 
@@ -2356,7 +2357,7 @@ def test_disaggregated_logprobs_serving(disaggregated_test_root,
 
     env = llm_venv._new_env.copy()
     env["TRTLLM_USE_UCX_KVCACHE"] = "1"
-    env["UCX_TLS"] = "^ib,gdr_copy"
+    env["UCX_TLS"] = get_ucx_tls()
     ctx_workers, gen_workers, disagg_server, work_dir = [], [], None, None
     config, ctx_workers, gen_workers, disagg_server, server_port, work_dir = \
         setup_disagg_cluster(config_file, env=env,
