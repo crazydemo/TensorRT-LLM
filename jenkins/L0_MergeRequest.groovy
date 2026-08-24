@@ -155,6 +155,18 @@ def DISABLE_CBTS = "disable_cbts"
 // Kill switch for CBTS per-test coverage; official post-merge pipeline only, single-GPU stages only in Phase 1.
 @Field
 def ENABLE_CBTS_COVERAGE = true
+// Pre-merge Tier 2 rollout policy. Keep this beside the CBTS switches so changes stay under infra review.
+@Field
+def CBTS_COVERAGE_PILOT_USERS = [
+    "crazydemo",
+    "QiJune",
+    "sunnyqgg",
+    "Barry-Delaney",
+    "xxi-nv",
+    "leslie-fang25",
+    "rosong11",
+    "tongyuantongyu",
+]
 @Field
 def OSS_COMPLIANCE_FILE_CHANGED = "oss_compliance_file_changed"
 
@@ -932,17 +944,20 @@ def _cbtsCoverageAudit(pipeline)
         def prHead = env.gitlabMergeRequestLastCommit ?: ""
         def readyJson = ""
         def pilotEligible = false
-        withCredentials([usernamePassword(credentialsId: 'github-cred-trtllm-ci', usernameVariable: 'NOT_USED_YET', passwordVariable: 'GITHUB_API_TOKEN')]) {
-            pilotEligible = sh(
-                script: "cd ${LLM_ROOT} && python3 jenkins/scripts/cbts/coverage_pilot.py",
-                returnStdout: true,
-            ).trim() == "true"
-            if (pilotEligible) {
-                readyJson = sh(
-                    script: "cd ${LLM_ROOT} && python3 jenkins/scripts/cbts/coverage_selection/artifact.py " +
-                            "--prepare cbts_cov${prHead ? " --pr-head ${prHead}" : ""} || true",
+        def pilotUsersJson = groovy.json.JsonOutput.toJson(CBTS_COVERAGE_PILOT_USERS)
+        withEnv(["CBTS_COVERAGE_PILOT_USERS=${pilotUsersJson}"]) {
+            withCredentials([usernamePassword(credentialsId: 'github-cred-trtllm-ci', usernameVariable: 'NOT_USED_YET', passwordVariable: 'GITHUB_API_TOKEN')]) {
+                pilotEligible = sh(
+                    script: "cd ${LLM_ROOT} && python3 jenkins/scripts/cbts/coverage_pilot.py",
                     returnStdout: true,
-                ).trim()
+                ).trim() == "true"
+                if (pilotEligible) {
+                    readyJson = sh(
+                        script: "cd ${LLM_ROOT} && python3 jenkins/scripts/cbts/coverage_selection/artifact.py " +
+                                "--prepare cbts_cov${prHead ? " --pr-head ${prHead}" : ""} || true",
+                        returnStdout: true,
+                    ).trim()
+                }
             }
         }
         if (!pilotEligible) {

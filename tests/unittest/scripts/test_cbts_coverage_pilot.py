@@ -18,6 +18,7 @@ import importlib.util
 import json
 import urllib.error
 import urllib.request
+from collections.abc import Set
 from pathlib import Path
 from types import ModuleType, TracebackType
 from typing import NoReturn, TypeAlias, Union
@@ -89,6 +90,24 @@ def test_evaluate_pr_info(
     assert pilot_module.evaluate_pr_info(pr_info, pilot_users=TEST_PILOT_USERS) == expected
 
 
+@pytest.mark.parametrize(
+    ("raw_value", "expected"),
+    (
+        ('[" pilot-user ", "second-user"]', frozenset({"pilot-user", "second-user"})),
+        ("", frozenset()),
+        ('{"pilot-user": true}', frozenset()),
+        ('["pilot-user", 1]', frozenset()),
+        ('["pilot-user", ""]', frozenset()),
+    ),
+)
+def test_pilot_users_from_json(
+    pilot_module: ModuleType,
+    raw_value: str,
+    expected: frozenset[str],
+) -> None:
+    assert pilot_module.pilot_users_from_json(raw_value) == expected
+
+
 def test_check_pilot_eligibility_uses_token(
     pilot_module: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -121,7 +140,7 @@ def test_check_pilot_eligibility_rejects_untrusted_url(
     monkeypatch.setattr(pilot_module.urllib.request, "urlopen", unexpected_urlopen)
 
     eligible, login, reason = pilot_module.check_pilot_eligibility(
-        "https://example.com/pulls/123", token="token"
+        "https://example.com/pulls/123", token="token", pilot_users=TEST_PILOT_USERS
     )
     assert not eligible
     assert not login
@@ -137,7 +156,9 @@ def test_check_pilot_eligibility_fails_closed_on_api_error(
 
     monkeypatch.setattr(pilot_module.urllib.request, "urlopen", urlopen)
 
-    eligible, login, reason = pilot_module.check_pilot_eligibility(PR_API_URL, token="token")
+    eligible, login, reason = pilot_module.check_pilot_eligibility(
+        PR_API_URL, token="token", pilot_users=TEST_PILOT_USERS
+    )
     assert not eligible
     assert not login
     assert reason.startswith("PR author lookup failed:")
@@ -151,13 +172,16 @@ def test_main_reads_bot_trigger_payload(
     trigger_phrase = json.dumps({"github_pr_api_url": PR_API_URL})
     monkeypatch.setenv("gitlabTriggerPhrase", trigger_phrase)
     monkeypatch.setenv("GITHUB_API_TOKEN", "token")
+    monkeypatch.setenv("CBTS_COVERAGE_PILOT_USERS", json.dumps(["pilot-user"]))
 
     def check_pilot_eligibility(
         pr_api_url: str,
         *,
+        pilot_users: Set[str],
         token: str,
     ) -> tuple[bool, str, str]:
         assert pr_api_url == PR_API_URL
+        assert pilot_users == TEST_PILOT_USERS
         assert token == "token"
         return True, "pilot-user", "author is allowlisted"
 
