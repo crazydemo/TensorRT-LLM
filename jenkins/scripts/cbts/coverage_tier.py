@@ -20,6 +20,7 @@ import re
 import shutil
 import sys
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -180,15 +181,21 @@ def apply_coverage_tier(
     repo_root: Path,
     db: TouchDB,
     no_data_policy: str = DEFAULT_NO_DATA_POLICY,
+    read_source: Callable[[str], str | None] | None = None,
 ) -> tuple[CoverageTierResult | None, str]:
-    """Return (narrowing, note); narrowing is None when the tier keeps the Tier-1 result."""
+    """Return (narrowing, note); optionally read source from a replay snapshot."""
     if any(r.scope is None for _, r in pairs):
         return None, "coverage tier skipped: a rule forced fallback (scope=null)"
     residual = sorted(set(pr.changed_files) - handled)
     if not residual:
         return None, "coverage tier skipped: no residual (all files handled by rules)"
 
-    selector = CoverageSelector(db, repo_root, no_data_policy=no_data_policy)
+    selector = CoverageSelector(
+        db,
+        repo_root,
+        no_data_policy=no_data_policy,
+        read_source=read_source,
+    )
     cov = selector.decide(residual, pr.diffs)
     if not cov.ok:
         return None, f"coverage tier declined: {cov.reason}"
