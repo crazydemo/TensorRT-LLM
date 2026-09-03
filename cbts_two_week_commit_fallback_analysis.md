@@ -251,6 +251,65 @@ The estimate assumes that `/bot run` arrivals are approximately uniform by commi
 generated coverage report becomes available immediately. Artifact publication delay or a tendency for runs
 to use older reports would increase the probability toward 100%.
 
+## Scenario: expand only core Python and native-code changes
+
+A less conservative policy can ignore gap-only changes that do not affect the code executed by the Python
+coverage report. Under this proposal, the expanded portion contributes only:
+
+- `tensorrt_llm/**/*.py`
+- Native source and headers under `cpp/`: `.cpp`, `.cc`, `.cxx`, `.c`, `.h`, `.hpp`, `.hh`, `.hxx`, `.cu`,
+  and `.cuh`
+
+Gap-only Groovy, JSON, YAML, TOML, lock, test, example, CI, and repository-configuration changes are not
+passed to coverage mapping and do not cause fallback. General `tensorrt_llm/**/*.py` remains Tier-2
+eligible. With the current Python-only coverage mapping, native changes are therefore the only remaining
+file-type fallback cause.
+
+All 43 native-blocker commits in this two-week sample changed files under `cpp/`; no same-suffix files from
+other top-level directories are included in these results.
+
+| Commit gap | Native-blocker windows | Total windows | Filtered-gap fallback probability | Raw expanded-diff probability |
+|---:|---:|---:|---:|---:|
+| 1 | 43 | 438 | 9.8% | 35.6% |
+| 2 | 79 | 437 | 18.1% | 58.1% |
+| 3 | 113 | 436 | 25.9% | 72.7% |
+| 5 | 162 | 434 | 37.3% | 87.8% |
+| 10 | 253 | 429 | 59.0% | 98.4% |
+| 15 | 320 | 424 | 75.5% | 99.8% |
+| 20 | 360 | 419 | 85.9% | 100.0% |
+
+These values were recomputed from each cumulative endpoint diff, rather than assuming that any native
+commit inside a window necessarily remains visible at the endpoint. This accounts for files whose changes
+are fully reverted within the window.
+
+For a coverage report published every 20 commits:
+
+- If the report is already exactly 20 commits behind, the filtered-gap fallback probability is 85.9%.
+- If `/bot run` is uniformly distributed over gap ages 0 through 19, the empirical average is 51.1%.
+- Across the 20 possible refresh alignments, the empirical average ranges from 40.4% to 58.4%.
+- The independent approximation for a uniformly random age is 55.5%.
+
+The practical headline estimate changes from approximately 85% under the raw expanded diff to
+approximately **51% under the Python-plus-native filtered gap**.
+
+The filter must apply only to the historical main-branch gap. The PR's own diff must remain complete:
+
+```text
+effective_files =
+    all files in pr_base..pr_head
+    UNION
+    relevant Python/native files in coverage_commit..pr_base
+```
+
+Filtering the full `coverage_commit..pr_head` result without preserving all PR-local files would incorrectly
+ignore a PR's own Groovy, test-list, dependency, or configuration changes.
+
+If a future coverage artifact provides a reliable native-code-to-test mapping, native changes could also
+participate in selection without forcing fallback. In that future model, file-type fallback for the filtered
+gap would be zero by construction. The remaining probability would come from mapping-level declines such as
+missing data, unusable diffs, or unbounded dependency closure; this commit-file analysis cannot estimate
+those outcomes.
+
 ## Interpretation and recommendation
 
 Using the raw `coverage_commit..pr_head` diff is safe in the conservative sense, but it is unlikely to be
@@ -259,6 +318,9 @@ otherwise eligible PR runs would fall back because the main gap contains a non-c
 
 Increasing coverage frequency alone has diminishing practical value: the observed fallback probability is
 already 58.1% at a two-commit gap and 87.8% at a five-commit gap.
+
+Filtering the gap to core Python and native code substantially improves those rates, but a 20-commit cadence
+still produces approximately 51% average fallback while native changes remain unmapped.
 
 A more promising design is to keep the two concepts separate:
 
