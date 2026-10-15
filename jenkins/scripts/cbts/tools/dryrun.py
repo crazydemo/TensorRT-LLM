@@ -71,6 +71,11 @@ THIS_FILE = Path(__file__).resolve()
 CBTS_DIR = THIS_FILE.parent.parent  # jenkins/scripts/cbts
 DEFAULT_REPO_ROOT = CBTS_DIR.parents[2]  # repo root
 CBTS_MAIN = CBTS_DIR / "main.py"
+sys.path[:0] = [str(CBTS_DIR), str(CBTS_DIR / "coverage_selection")]
+
+from native_graph import NativeGraph  # noqa: E402
+from native_impact import build_native_impact_report  # noqa: E402
+from touch_db import TouchDB  # noqa: E402
 
 TEST_DB_REL = "tests/integration/test_lists/test-db"
 GROOVY_REL = "jenkins/L0_Test.groovy"
@@ -87,6 +92,7 @@ def _git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProc
         capture_output=True,
         text=True,
         check=check,
+        env={**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"},
     )
 
 
@@ -135,7 +141,13 @@ def _resolve_pr(subject: str, sha: str) -> tuple[str, str]:
 
 
 def _run_cbts(
-    payload: dict, test_db: Path, groovy: Path, repo: Path, coverage_db: Optional[str] = None
+    payload: dict,
+    test_db: Path,
+    groovy: Path,
+    repo: Path,
+    coverage_db: Optional[str] = None,
+    native_codegraph: Optional[str] = None,
+    import_executed_policy: str = "analyze",
 ) -> dict:
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
         json.dump(payload, f)
@@ -153,6 +165,9 @@ def _run_cbts(
     ]
     if coverage_db:
         argv += ["--coverage-db", coverage_db]
+        if native_codegraph:
+            argv += ["--native-codegraph", native_codegraph]
+        argv += ["--import-executed-policy", import_executed_policy]
     try:
         res = subprocess.run(argv, capture_output=True, text=True, check=False)
     finally:
@@ -176,6 +191,7 @@ def _fmt_summary(
     result: dict,
     post_merge: bool,
     tests_only: bool,
+    native_impact: Optional[dict] = None,
 ) -> str:
     trigger = "/bot run --post-merge" if post_merge else "/bot run"
     lines = [
@@ -225,6 +241,28 @@ def _fmt_summary(
             lines.append(f"  - [{src}] {rest}" if rest else f"  - [{src}]")
         else:
             lines.append(f"  - {r}")
+    if native_impact is not None:
+        lines.append("")
+        lines.append("native impact (diagnostic; see native-impact.json):")
+        if "error" in native_impact:
+            lines.append(f"  error: {native_impact['error']}")
+        else:
+            summary = native_impact["summary"]
+            lines.append(
+                "  "
+                f"production_files={summary['mapped_native_files']}/"
+                f"{summary['production_native_files']} mapped, "
+                f"native_tests={summary['native_test_files']}, "
+                f"functions={summary['python_function_mappings']}, "
+                f"unique_cases={summary['unique_cases']}"
+            )
+            for file_report in native_impact["native_files"]:
+                lines.append(
+                    f"  - {file_report['native_file']}: "
+                    f"status={file_report['mapping_status']}, "
+                    f"functions={len(file_report['python_functions'])}, "
+                    f"cases={file_report['case_count']}"
+                )
     return "\n".join(lines) + "\n"
 
 
@@ -276,6 +314,24 @@ def _prep_pr_dir(out_dir: Path, label: str) -> Path:
     return pr_dir
 
 
+def _write_native_impact(
+    pr_dir: Path,
+    files: list[str],
+    coverage_db: Optional[str],
+    native_codegraph: Optional[str],
+) -> Optional[dict]:
+    """Write the native mapping/case diagnostic when both databases are configured."""
+    if not coverage_db or not native_codegraph:
+        return None
+    try:
+        with NativeGraph.open(native_codegraph) as graph, TouchDB.open(coverage_db) as db:
+            report = build_native_impact_report(files, graph, db)
+    except (OSError, ValueError) as error:
+        report = {"error": str(error)}
+    (pr_dir / "native-impact.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    return report
+
+
 def _cbts_for_snapshot(
     repo: Path,
     tip_sha: str,
@@ -284,6 +340,8 @@ def _cbts_for_snapshot(
     post_merge: bool,
     pr_dir: Path,
     coverage_db: Optional[str] = None,
+    native_codegraph: Optional[str] = None,
+    import_executed_policy: str = "analyze",
 ) -> dict:
     """Run CBTS against the tree at `tip_sha` over `files`/`diffs`.
 
@@ -302,7 +360,15 @@ def _cbts_for_snapshot(
             test_db = wt / TEST_DB_REL
             groovy = wt / GROOVY_REL
             shared_out = wt / "cbts_test_db"
-            result = _run_cbts(payload, test_db, groovy, wt, coverage_db)
+            result = _run_cbts(
+                payload,
+                test_db,
+                groovy,
+                wt,
+                coverage_db,
+                native_codegraph,
+                import_executed_policy,
+            )
             if shared_out.exists():
                 for yml in shared_out.glob("*.yml"):
                     shutil.copy2(yml, pr_dir / yml.name)
@@ -317,6 +383,8 @@ def _replay_one(
     out_dir: Path,
     post_merge: bool,
     coverage_db: Optional[str] = None,
+    native_codegraph: Optional[str] = None,
+    import_executed_policy: str = "analyze",
 ) -> tuple[str, str, list[str], str, dict, bool]:
     subject = _git(repo, "log", "-1", "--pretty=%s", sha).stdout.strip()
     label, pr_url = _resolve_pr(subject, sha)
@@ -324,9 +392,30 @@ def _replay_one(
     tests_only = _is_tests_only(files)
     pr_dir = _prep_pr_dir(out_dir, label)
     diffs = {f: _file_diff(repo, sha, f) for f in files}
-    result = _cbts_for_snapshot(repo, sha, files, diffs, post_merge, pr_dir, coverage_db)
+    result = _cbts_for_snapshot(
+        repo,
+        sha,
+        files,
+        diffs,
+        post_merge,
+        pr_dir,
+        coverage_db,
+        native_codegraph,
+        import_executed_policy,
+    )
+    native_impact = _write_native_impact(pr_dir, files, coverage_db, native_codegraph)
+    (pr_dir / "decision.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     (pr_dir / "summary.txt").write_text(
-        _fmt_summary(pr_url, sha, subject, files, result, post_merge, tests_only)
+        _fmt_summary(
+            pr_url,
+            sha,
+            subject,
+            files,
+            result,
+            post_merge,
+            tests_only,
+            native_impact,
+        )
     )
     return label, pr_url, files, subject, result, tests_only
 
@@ -337,6 +426,8 @@ def _replay_range(
     out_dir: Path,
     post_merge: bool,
     coverage_db: Optional[str] = None,
+    native_codegraph: Optional[str] = None,
+    import_executed_policy: str = "analyze",
 ) -> tuple[str, str, list[str], str, dict, bool]:
     """Replay the cumulative diff of a git range as a single CBTS run.
 
@@ -355,9 +446,30 @@ def _replay_range(
     pr_url = f"range {range_expr} (base={base_disp}, tip={tip_sha[:8]})"
     pr_dir = _prep_pr_dir(out_dir, label)
     diffs = {f: _file_diff_range(repo, diff_arg, f) for f in files}
-    result = _cbts_for_snapshot(repo, tip_sha, files, diffs, post_merge, pr_dir, coverage_db)
+    result = _cbts_for_snapshot(
+        repo,
+        tip_sha,
+        files,
+        diffs,
+        post_merge,
+        pr_dir,
+        coverage_db,
+        native_codegraph,
+        import_executed_policy,
+    )
+    native_impact = _write_native_impact(pr_dir, files, coverage_db, native_codegraph)
+    (pr_dir / "decision.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     (pr_dir / "summary.txt").write_text(
-        _fmt_summary(pr_url, tip_sha, subject, files, result, post_merge, tests_only)
+        _fmt_summary(
+            pr_url,
+            tip_sha,
+            subject,
+            files,
+            result,
+            post_merge,
+            tests_only,
+            native_impact,
+        )
     )
     return label, pr_url, files, subject, result, tests_only
 
@@ -481,6 +593,19 @@ def main(argv: Optional[list[str]] = None) -> int:
         default=None,
         help="path to cbts_touchmap.sqlite; enables the coverage tier (Tier 2) in main.py",
     )
+    ap.add_argument(
+        "--native-codegraph",
+        default=None,
+        help="path to cbts_codegraph.sqlite; enables native-to-Python mapping "
+        "when --coverage-db is set",
+    )
+    ap.add_argument(
+        "--import-executed-policy",
+        choices=["analyze", "decline", "file", "importers"],
+        default="analyze",
+        help="use static analysis (default: analyze), or explicitly request experimental "
+        "file/importers bounds or decline for import-executed changes",
+    )
     ap.add_argument("--out", default="cbts_dryrun", help="output directory (default: cbts_dryrun)")
     ap.add_argument(
         "--repo-root",
@@ -503,7 +628,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     # Coverage tier is opt-in: it needs a separately downloaded touch DB.
     if args.coverage_db:
         print(f"coverage tier ON (merged with rules) via {args.coverage_db}", file=sys.stderr)
+        if args.native_codegraph:
+            print(f"native codegraph ON via {args.native_codegraph}", file=sys.stderr)
     else:
+        if args.native_codegraph:
+            print("error: --native-codegraph requires --coverage-db", file=sys.stderr)
+            return 2
         print(
             "coverage tier OFF (rules only). To include coverage-based selection, download the "
             "post-merge cbts_pystart_report.tar.gz (.../L0_PostMerge/cbts-coverage/), extract "
@@ -528,7 +658,15 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.range_expr:
         print(f"Replaying cumulative range: {args.range_expr}", file=sys.stderr)
         try:
-            row = _replay_range(repo, args.range_expr, out_dir, args.post_merge, args.coverage_db)
+            row = _replay_range(
+                repo,
+                args.range_expr,
+                out_dir,
+                args.post_merge,
+                args.coverage_db,
+                args.native_codegraph,
+                args.import_executed_policy,
+            )
         except subprocess.CalledProcessError as e:
             print(f"git error: {e.stderr.strip()}", file=sys.stderr)
             return 1
@@ -556,7 +694,15 @@ def main(argv: Optional[list[str]] = None) -> int:
             )
         for sha in shas:
             try:
-                row = _replay_one(repo, sha, out_dir, args.post_merge, args.coverage_db)
+                row = _replay_one(
+                    repo,
+                    sha,
+                    out_dir,
+                    args.post_merge,
+                    args.coverage_db,
+                    args.native_codegraph,
+                    args.import_executed_policy,
+                )
             except subprocess.CalledProcessError as e:
                 print(f"  {sha[:8]}: git error: {e.stderr.strip()}", file=sys.stderr)
                 continue

@@ -21,6 +21,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from native_graph import NativeGraph, is_native_source
 from python_change_analysis import (
     ImportTarget,
     PythonChangeFacts,
@@ -65,11 +66,15 @@ class CoverageResult:
     caller_bounded_funcs: list[str] = field(default_factory=list)
     # residual file the forge API returned no patch for (binary / rename / oversized); declines
     no_diff_files: list[str] = field(default_factory=list)
+    # module/class-body changes widened by `import_executed_policy`
+    import_executed_bounds: list[str] = field(default_factory=list)
 
 
 # Fallback for a changed function with no DB rows: whole file / its importers / nothing.
 NO_DATA_POLICIES = ("file", "importers", "ignore")
 DEFAULT_NO_DATA_POLICY = "file"
+IMPORT_EXECUTED_POLICIES = ("analyze", "decline", "file", "importers")
+DEFAULT_IMPORT_EXECUTED_POLICY = "analyze"
 
 
 class CoverageSelector:
@@ -84,7 +89,9 @@ class CoverageSelector:
         min_funcs: int = _MIN_FUNCS,
         untrusted_stage_markers: tuple[str, ...] = _UNTRUSTED_STAGE_MARKERS,
         no_data_policy: str = DEFAULT_NO_DATA_POLICY,
+        import_executed_policy: str = DEFAULT_IMPORT_EXECUTED_POLICY,
         read_source: Callable[[str], str | None] | None = None,
+        native_graph: NativeGraph | None = None,
         external_references: Callable[[str, set[str]], set[str]] | None = None,
         external_reference_paths: Callable[[str, set[str]], dict[str, set[str]]] | None = None,
     ) -> None:
@@ -96,6 +103,7 @@ class CoverageSelector:
         self._min_funcs = min_funcs
         self._untrusted_stage_markers = untrusted_stage_markers
         self._no_data_policy = no_data_policy
+        self._import_executed_policy = import_executed_policy
         # Defaults to the checkout; callers explaining a past commit inject their own.
         self._read_source = read_source or self._read_head
         if external_references is None and external_reference_paths is None:
@@ -105,7 +113,9 @@ class CoverageSelector:
         else:
             self._external_references = external_references
             self._external_reference_paths = external_reference_paths
+        self._native_graph = native_graph
         self._untrusted: set[str] | None = None
+        self._import_bounds: list[str] = []
 
     def untrusted_tests(self) -> set[str]:
         """Stage-prefixed tests with incomplete-looking capture (cached, DB-wide)."""
@@ -136,7 +146,33 @@ class CoverageSelector:
         no_data: set[str] = set()
         caller_bounded: set[str] = set()
         no_diff: list[str] = []
+        self._import_bounds = []
         for path in residual_files:
+            if is_native_source(path):
+                if self._native_graph is None:
+                    return (
+                        impacted,
+                        sorted(no_data),
+                        sorted(caller_bounded),
+                        no_diff,
+                        "native code graph is not configured",
+                    )
+                functions = self._native_graph.python_functions(path)
+                if not functions:
+                    return (
+                        impacted,
+                        sorted(no_data),
+                        sorted(caller_bounded),
+                        no_diff,
+                        f"native file has no static mapping: {path}",
+                    )
+                for python_file, qualname in functions:
+                    tests = self.db.tests_touching_func(python_file, qualname)
+                    impacted |= tests
+                    if not tests:
+                        no_data.add(f"{python_file}::{qualname}")
+                        impacted |= self._no_data_fallback(python_file)
+                continue
             cf = canon(path)
             diff = diffs.get(path) or ""
             source = self._read_source(path)
@@ -173,6 +209,18 @@ class CoverageSelector:
             import_resolved = False
             for qualname in sorted(qualnames):  # sorted -> deterministic no_data order
                 if qualname in import_executed:
+                    if self._import_executed_policy != "analyze":
+                        tests = self._import_executed_bound(cf)
+                        if not tests:
+                            why = (
+                                "import-executed change, "
+                                f"empty or disabled {self._import_executed_policy} bound: "
+                                f"{path}::{qualname}"
+                            )
+                            return impacted, sorted(no_data), sorted(caller_bounded), no_diff, why
+                        impacted |= tests
+                        self._import_bounds.append(f"{cf}::{qualname}")
+                        continue
                     if dependencies.limitation:
                         why = (
                             f"import-executed change, no sound bound: {path}::{qualname} "
@@ -516,6 +564,14 @@ class CoverageSelector:
             bound |= transitive
         return bound or None, None
 
+    def _import_executed_bound(self, cf: str) -> set[str]:
+        """Return an explicitly requested experimental import-change bound."""
+        if self._import_executed_policy == "file":
+            return self.db.tests_touching_file(cf)
+        if self._import_executed_policy == "importers":
+            return self.db.tests_touching_func(cf, "<module>")
+        return set()
+
     def _underrecorded_bound(self, cf: str, qualname: str) -> set[str] | None:
         """File row set when it is wider than a closure's enclosing qualname's, else None."""
         file_tests = self.db.tests_touching_file(cf)
@@ -538,8 +594,16 @@ class CoverageSelector:
             return None
 
     def decide(self, residual_files: list[str], diffs: dict[str, str]) -> CoverageResult:
-        """Decide over residual files; ok=False for non-core, not-in-DB, or import-executed changes."""
+        """Decide over residual files; fail closed when no configured impact bound exists."""
         for path in residual_files:
+            if is_native_source(path):
+                if self._native_graph is None:
+                    return CoverageResult(ok=False, reason="native code graph is not configured")
+                if not self._native_graph.python_functions(path):
+                    return CoverageResult(
+                        ok=False, reason=f"native file has no static mapping: {path}"
+                    )
+                continue
             # Gate on the repo path: canon() matches `tensorrt_llm/` anywhere.
             if not (path.endswith(".py") and path.startswith("tensorrt_llm/")):
                 return CoverageResult(ok=False, reason=f"non-core-Python residual file: {path}")
@@ -582,4 +646,5 @@ class CoverageSelector:
             n_untrusted=n_untrusted,
             no_data_funcs=no_data_funcs,
             caller_bounded_funcs=caller_bounded_funcs,
+            import_executed_bounds=list(self._import_bounds),
         )

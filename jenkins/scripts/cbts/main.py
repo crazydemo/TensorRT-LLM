@@ -51,7 +51,9 @@ from blocks import (  # noqa: E402
     write_filtered_test_db,
 )
 from coverage_tier import (  # noqa: E402
+    DEFAULT_IMPORT_EXECUTED_POLICY,
     DEFAULT_NO_DATA_POLICY,
+    IMPORT_EXECUTED_POLICIES,
     NO_DATA_POLICIES,
     apply_coverage_tier,
     compute_coverage_stage_counts,
@@ -59,6 +61,7 @@ from coverage_tier import (  # noqa: E402
     open_db,
     write_coverage_test_db,
 )
+from native_graph import NativeGraph  # noqa: E402
 from rules._helpers import strip_noop_diff_lines  # noqa: E402
 from rules.agent_flow_rule import AgentFlowRule  # noqa: E402
 from rules.base import PRInputs, Rule, RuleResult, format_reason  # noqa: E402
@@ -417,6 +420,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         "--coverage-db is. Its topology and compatibility metadata are recorded.",
     )
     parser.add_argument(
+        "--native-codegraph",
+        default=None,
+        help="Optional static SQLite graph mapping native files to Python functions.",
+    )
+    parser.add_argument(
         "--no-data-policy",
         choices=NO_DATA_POLICIES,
         default=DEFAULT_NO_DATA_POLICY,
@@ -424,6 +432,16 @@ def main(argv: Optional[list[str]] = None) -> int:
         "'file' force-runs every test entering that file, 'importers' only the "
         "file's <module> touch set, 'ignore' treats it as impacting nothing "
         f"(default: {DEFAULT_NO_DATA_POLICY}).",
+    )
+    parser.add_argument(
+        "--import-executed-policy",
+        choices=IMPORT_EXECUTED_POLICIES,
+        default=DEFAULT_IMPORT_EXECUTED_POLICY,
+        help="How to bound module/class-body and signature/decorator changes: "
+        "'analyze' uses static consumers and repository references, "
+        "'file' uses every case touching the file, 'importers' uses the file's "
+        "<module> touch set, and 'decline' runs the full fallback "
+        f"(default: {DEFAULT_IMPORT_EXECUTED_POLICY}).",
     )
     args = parser.parse_args(argv)
 
@@ -496,8 +514,13 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.coverage_db and result.scope is None:
         tier = None
         result.coverage_freshness = "ok" if result.coverage_db_drift is not None else "unknown"
+        db = None
+        native_graph = None
         try:
             db = open_db(args.coverage_db)
+            native_graph = (
+                NativeGraph.open(args.native_codegraph) if args.native_codegraph else None
+            )
             tier, note = apply_coverage_tier(
                 pr,
                 selector.pairs,
@@ -507,10 +530,17 @@ def main(argv: Optional[list[str]] = None) -> int:
                 repo_root,
                 db,
                 no_data_policy=args.no_data_policy,
+                import_executed_policy=args.import_executed_policy,
+                native_graph=native_graph,
             )
         except Exception as e:  # noqa: BLE001 — CBTS must never break CI
             note = f"coverage tier errored: {e}"
             tier = None
+        finally:
+            if native_graph is not None:
+                native_graph.close()
+            if db is not None:
+                db.close()
         if tier is not None:
             result.scope = "coverage"
             result.scopes = sorted(

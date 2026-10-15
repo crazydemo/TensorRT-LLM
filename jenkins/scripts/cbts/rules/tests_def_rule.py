@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""TestsDefRule — narrows CI when files under tests/ change.
+"""TestsDefRule — narrows CI when Python or C++ test definitions change.
 
 Handles any path under `tests/` whose first component (after the
 `tests/integration/defs/` strip) appears in some YAML entry's namespace.
@@ -21,6 +21,11 @@ otherwise file-level. For Python helpers, direct static imports identify
 their test-file consumers. Ambiguous helpers and other non-test paths
 (conftest and data files) walk up enclosing directories to the narrowest
 YAML-covered ancestor.
+
+Native unit tests under `cpp/tests/unit_tests/<component>/` map to the
+`cpp/test_unit_tests.py::test_unit_tests[<component>-...]` integration entry.
+The rule keeps the full matching YAML block because pytest parameter suffixes
+are not representable by the existing block-filter prefix contract.
 
 Paths matched by `out_of_scope_rule.is_out_of_scope` (QA / dev test
 lists, `.test_durations`, and microbenchmarks) are excluded from candidates
@@ -35,7 +40,7 @@ import re
 from pathlib import Path, PurePosixPath
 from typing import Optional
 
-from blocks import Stage, YAMLIndex
+from blocks import Stage, YAMLIndex, normalize_test_id
 from repository_reference import RepositoryReferenceIndex
 
 from ._helpers import (
@@ -56,6 +61,34 @@ BLAST_RADIUS_FRACTION = 0.8
 
 ACCURACY_REFS_PREFIX = "tests/integration/defs/accuracy/references/"
 ACCURACY_DIR = "tests/integration/defs/accuracy"
+CPP_UNIT_TEST_PREFIX = "cpp/tests/unit_tests/"
+CPP_UNIT_TEST_TARGET = "cpp/test_unit_tests.py::test_unit_tests"
+
+
+def _cpp_unit_component(path: str) -> str | None:
+    if not path.startswith(CPP_UNIT_TEST_PREFIX):
+        return None
+    relative = path.removeprefix(CPP_UNIT_TEST_PREFIX)
+    component, separator, _remainder = relative.partition("/")
+    return component if component and separator else None
+
+
+def _cpp_unit_block_filters(
+    yaml_index: YAMLIndex,
+    component: str,
+) -> dict[tuple[str, int], dict[str, set[str]]]:
+    """Return blocks containing the component's parameterized C++ unit-test entry."""
+    parameter_prefix = f"{CPP_UNIT_TEST_TARGET}[{component}"
+    block_filters: dict[tuple[str, int], dict[str, set[str]]] = {}
+    for block in yaml_index.blocks:
+        matching = {
+            raw for raw in block.tests if normalize_test_id(raw).startswith(parameter_prefix)
+        }
+        if matching:
+            block_filters[(block.yaml_stem, block.block_index)] = {CPP_UNIT_TEST_TARGET: matching}
+    return block_filters
+
+
 DEFS_GIT_PREFIX = "tests/integration/defs/"
 
 _CLASS_RE = re.compile(r"class\s+(\w+)")
@@ -472,7 +505,8 @@ class TestsDefRule(Rule):
         candidates = [
             f
             for f in pr.changed_files
-            if f.startswith("tests/") and not is_out_of_scope(f) and not is_docs_path(f)
+            if (f.startswith("tests/") and not is_out_of_scope(f) and not is_docs_path(f))
+            or f.startswith(CPP_UNIT_TEST_PREFIX)
         ]
         if not candidates:
             return None
@@ -484,6 +518,19 @@ class TestsDefRule(Rule):
         no_match: set[str] = set()
 
         for git_path in candidates:
+            cpp_component = _cpp_unit_component(git_path)
+            if cpp_component is not None:
+                file_bf = _cpp_unit_block_filters(self.yaml_index, cpp_component)
+                if not file_bf:
+                    out_of_namespace.add(git_path)
+                    continue
+                handled.add(git_path)
+                narrowed.add(git_path)
+                for key, prefix_to_ids in file_bf.items():
+                    dst = block_filters.setdefault(key, {})
+                    for prefix, ids in prefix_to_ids.items():
+                        dst.setdefault(prefix, set()).update(ids)
+                continue
             yaml_path = self.yaml_index.git_path_to_yaml_key(git_path)
             if yaml_path is None:
                 base = git_path.rsplit("/", 1)[-1]

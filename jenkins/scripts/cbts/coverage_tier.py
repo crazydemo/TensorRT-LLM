@@ -39,7 +39,14 @@ from blocks import (
 from rules.base import PRInputs, RuleResult
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "coverage_selection"))
-from selector import DEFAULT_NO_DATA_POLICY, NO_DATA_POLICIES, CoverageSelector  # noqa: E402,F401
+from native_graph import NativeGraph  # noqa: E402
+from selector import (  # noqa: E402,F401
+    DEFAULT_IMPORT_EXECUTED_POLICY,
+    DEFAULT_NO_DATA_POLICY,
+    IMPORT_EXECUTED_POLICIES,
+    NO_DATA_POLICIES,
+    CoverageSelector,
+)
 from touch_db import TouchDB, db_key, stage_family  # noqa: E402
 
 
@@ -197,13 +204,21 @@ def apply_coverage_tier(
     repo_root: Path,
     db: TouchDB,
     no_data_policy: str = DEFAULT_NO_DATA_POLICY,
+    import_executed_policy: str = DEFAULT_IMPORT_EXECUTED_POLICY,
+    native_graph: NativeGraph | None = None,
 ) -> tuple[CoverageTierResult | None, str]:
     """Return (narrowing, note); narrowing is None when the tier keeps the Tier-1 result."""
     residual, note = coverage_preflight(pr, pairs, handled)
     if note:
         return None, note
 
-    selector = CoverageSelector(db, repo_root, no_data_policy=no_data_policy)
+    selector = CoverageSelector(
+        db,
+        repo_root,
+        no_data_policy=no_data_policy,
+        import_executed_policy=import_executed_policy,
+        native_graph=native_graph,
+    )
     cov = selector.decide(residual, pr.raw_diffs or pr.diffs)
     if not cov.ok:
         return None, f"coverage tier declined: {cov.reason}"
@@ -273,6 +288,12 @@ def apply_coverage_tier(
             "dropped_stages": len(dropped),
             "outcome": "narrowed" if narrowed else "nothing_removable",
             "no_data_policy": no_data_policy,
+            "import_executed_policy": import_executed_policy,
+            **(
+                {"import_executed_bounds": list(cov.import_executed_bounds)}
+                if cov.import_executed_bounds
+                else {}
+            ),
             "no_diff_files": len(cov.no_diff_files),
             **({"no_data_funcs": list(cov.no_data_funcs)} if cov.no_data_funcs else {}),
             **(

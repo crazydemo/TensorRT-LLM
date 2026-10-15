@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # CBTS Coverage Selection — Current State
 
 How the touch DB is turned into a decision about which cases to run. Collection side:
@@ -11,7 +14,7 @@ How the touch DB is turned into a decision about which cases to run. Collection 
 Tier 1  rules      every changed file claimed by a rule → narrow per the rule
    │               some file left unclaimed (residual)
    ▼
-Tier 2  coverage   residual is all core Python and all present in the DB → scope=coverage
+Tier 2  coverage   residual is mapped native code or core Python present in the DB → scope=coverage
    │               any condition unmet → decline
    ▼
         full fallback                                                     scope=null
@@ -48,7 +51,9 @@ of:
 
 | Gate | Condition |
 |---|---|
-| Non-core file | `path` is not a `.py` under `tensorrt_llm/` (checked on the **repo path**, not `canon()`) |
+| Non-core file | `path` is neither a `.py` under `tensorrt_llm/` nor a native file present in the optional static codegraph |
+| Native graph absent | a C/C++/CUDA residual exists but `--native-codegraph` was not configured |
+| Native file unmapped | the static codegraph has no Python function for the changed native file |
 | File absent from the DB | `file_has_touch_rows(cf)` is false — new or uninstrumented, so "who touches it" is unknown rather than empty |
 | **Unbounded import-executed change** | a changed line lands on a class body, signature / decorator, or unsupported module statement; the conservative exceptions are below |
 | No usable patch | the forge API omitted the diff (binary / rename / oversized), so the changed scope is unknown |
@@ -111,6 +116,14 @@ unresolved branch, cycle, or use of the function as a value falls back to the co
 This is why `_LINUX_EBADHANDLE = 521` can be bounded through `_is_lock_infra_error` and its recorded
 callers without treating all import-time execution as safe or assuming that `_` means private.
 
+### Explicit experimental import policies
+
+The default `--import-executed-policy analyze` uses the static analysis above. The local native
+prototype also retains explicit `file`, `importers`, and `decline` policies for comparisons.
+`file` uses all touches in the Python file; `importers` uses its `<module>` touches. Neither is a
+sound upper bound for missing pool-worker imports. Empty bounds decline. `decline` rejects all
+import-executed changes. Experimental bounds are reported in `import_executed_bounds`.
+
 ### 4.1 Closures
 
 A closure body is not recorded at all, so a changed closure is attributed to its nearest recorded
@@ -136,6 +149,8 @@ to can itself be import-only.
 
 ```
 for each residual file:
+  ├ native file with no static mapping → decline
+  ├ mapped native file → Python functions → function rows or file fallback
   ├ no usable diff / unparsable → decline
   ├ diff has no lines           → contributes nothing (comment / blank only)
   └ for each changed qualname:
@@ -147,6 +162,13 @@ for each residual file:
        ├ has DB rows     → tests_touching_func(cf, q)       precise
        └ no DB rows      → no_data_policy fallback (file by default)
 ```
+
+Native lookup is deliberately a separate, build-time SQLite database. The builder scans Python
+functions for direct `torch.ops` and nanobind calls, resolves exact registrations, follows only
+uniquely resolved native calls to a bounded depth, and records directly included project headers.
+It does not run inside a test case. Conditional boundaries are included because they widen the
+impacted set; an absent native mapping declines the entire coverage tier. A mapped Python function
+with no touch rows uses the same `no_data_policy` fallback as a changed Python function.
 
 Comments and blank lines are stripped upstream by `strip_noop_diff_lines` (`^\s*#` and empty
 lines), so a change that edits a function body and adds a module-level comment is not mistaken

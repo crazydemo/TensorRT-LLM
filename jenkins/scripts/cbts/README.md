@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # CBTS — Change-Based Testing Selection
 
 CI test-selection tool. Narrows the Jenkins stages and per-stage tests that
@@ -361,3 +364,6 @@ Every fallback emits an `echo` log line.
 `getMakoArgsFromStageName` (~`L0_Test.groovy:2079`) and
 `parseTaskConfigFromStageName` (~`:2066`). Update both when adding new
 backends / orchestrators / stage-name conventions.
+
+The local native-codegraph prototype and its handoff contract are documented in
+[the C++ coverage handoff report](coverage_selection/NATIVE_COVERAGE_HANDOFF_ZH.md).
