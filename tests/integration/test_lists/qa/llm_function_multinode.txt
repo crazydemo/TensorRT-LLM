@@ -1,1 +1,2 @@
 test_e2e.py::test_openai_disagg_multi_nodes_completion[ctx_tp2pp1-gen_tp2pp1]
+test_e2e.py::test_multi_nodes_eval[DeepSeek-R1/DeepSeek-R1-0528-FP4-tp16-mmlu]
