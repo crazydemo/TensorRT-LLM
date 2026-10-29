@@ -143,7 +143,7 @@ since nothing could ever attribute it to one test over another.
 | Comprehensions / genexprs / lambdas | skipped explicitly by `_SKIP_QUALNAMES` |
 | Other test bodies and helpers | Under `tests/`, the default include patterns select only `test_common/` and `conftest.py` |
 | A Ray stage's GPU worker | `RayGPUWorker` lives in the opted-out `default_worker.py` |
-| Multi-GPU / multi-node stages | phase 1 collects on single-GPU stages only; the channel design is single-producer, so a multi-node stage would need its address published somewhere shared |
+| Multi-node stages | excluded; the channel design is single-producer, so a multi-node stage would need its address published somewhere shared |
 | A channel failure inside an inner-pytest batch | `test_unittests_v2` has no `cbts_plugin` (§3's `inner_pytest` row), so nothing records a taint if a subscriber it spawns falls behind |
 
 ### 5.4 Pytest fixtures and hooks
@@ -182,12 +182,14 @@ whether or not the record is sound.
 
 `L0_MergeRequest.groovy` decides pipeline-level eligibility and `isCbtsStage()` decides each stage:
 
-- official post-merge pipeline only (`ENABLE_CBTS_COVERAGE && JOB_NAME ==~ /.*PostMerge.*/`)
+- `ENABLE_CBTS_COVERAGE` kill switch
 - not a perf stage or a TensorRT / CPP stage
-- single-GPU stages only (name carries no `-<N>_GPUs` / `-<N>_Nodes`)
+- post-merge: single-GPU stages only; pre-merge: single-node multi-GPU stages only (collection experiment)
+- multi-node stages excluded
 - not listed in `CBTS_EXCLUDE_STAGES`
 
-The per-process files ride back inside `results-<stage>.tar.gz`; architecture checkpoints first
-upload `cbts_pystart_report_x86_64.tar.gz` and `cbts_pystart_report_SBSA.tar.gz`, which the selector
-requires and hierarchically merges. The later `Test Coverage` stage merges all files and uploads
+The per-process files ride back inside `results-<stage>.tar.gz`. Post-merge architecture
+checkpoints first upload `cbts_pystart_report_x86_64.tar.gz` and
+`cbts_pystart_report_SBSA.tar.gz`, which the selector requires and hierarchically merges. The
+later `Test Coverage` stage merges all files and uploads
 `${UPLOAD_PATH}/cbts-coverage/cbts_pystart_report.tar.gz` for the full report.
