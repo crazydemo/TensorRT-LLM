@@ -1,0 +1,254 @@
+{
+  "sample": {
+    "sha": "807a036f064038d8d0fe1bdf64bbac579d648be1",
+    "pr": "19885",
+    "zone": "C3",
+    "old_decision": "import \u671f\u4ee3\u7801\u6321\u4f4f"
+  },
+  "core_python": true,
+  "candidate": {
+    "scope": null,
+    "scopes": [],
+    "affected_stages": [],
+    "reasons": [
+      {
+        "source": "testdef",
+        "blocks": 2,
+        "stages": 11
+      },
+      {
+        "source": "testlist",
+        "blocks": 1,
+        "stages": 9
+      },
+      {
+        "source": "fallback",
+        "reason": "unhandled_files",
+        "files": [
+          "tensorrt_llm/_torch/custom_ops/cute_dsl_kimi_k3_custom_ops.py"
+        ],
+        "coverage_declined": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/custom_ops/cute_dsl_kimi_k3_custom_ops.py::<module> (effectful module statement)"
+      }
+    ],
+    "test_db_dir_override": null,
+    "affected_stage_test_counts": {},
+    "affected_stage_split_counts": {},
+    "sanity_required": true,
+    "perfsanity_required": true,
+    "enable_multi_gpu": false,
+    "coverage_dropped_stages": [],
+    "coverage_db_build": null,
+    "coverage_db_commit": null,
+    "coverage_db_lag": null,
+    "coverage_db_base_commit": null,
+    "coverage_db_drift": null,
+    "coverage_db_drift_status": "",
+    "coverage_freshness": "unknown",
+    "coverage_residual_files": [
+      "tensorrt_llm/_torch/custom_ops/cute_dsl_kimi_k3_custom_ops.py"
+    ],
+    "coverage_compatibility": "not_attempted",
+    "coverage_decline_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/custom_ops/cute_dsl_kimi_k3_custom_ops.py::<module> (effectful module statement)",
+    "coverage_decline_category": "import_executed",
+    "coverage_no_diff_files": 0
+  },
+  "compatibility": {
+    "status": "not_needed_fallback",
+    "conflicts": []
+  },
+  "eligible_hit": false,
+  "candidate_metrics": {
+    "total": 1254,
+    "kept": 1254,
+    "skipped": 0,
+    "families": {
+      "CPU-Generic-x86": {
+        "total": 174,
+        "kept": 174,
+        "skipped": 0
+      },
+      "A10-PyTorch": {
+        "total": 195,
+        "kept": 195,
+        "skipped": 0
+      },
+      "A30-PyTorch": {
+        "total": 10,
+        "kept": 10,
+        "skipped": 0
+      },
+      "A30-CPP": {
+        "total": 2,
+        "kept": 2,
+        "skipped": 0
+      },
+      "A100X-PyTorch": {
+        "total": 23,
+        "kept": 23,
+        "skipped": 0
+      },
+      "L40S-PyTorch": {
+        "total": 29,
+        "kept": 29,
+        "skipped": 0
+      },
+      "H100_PCIe-PyTorch-Ray": {
+        "total": 24,
+        "kept": 24,
+        "skipped": 0
+      },
+      "H100_PCIe-CPP": {
+        "total": 4,
+        "kept": 4,
+        "skipped": 0
+      },
+      "RTX5090-PyTorch": {
+        "total": 7,
+        "kept": 7,
+        "skipped": 0
+      },
+      "RTX5080-PyTorch": {
+        "total": 7,
+        "kept": 7,
+        "skipped": 0
+      },
+      "H100_PCIe-PyTorch-Perf": {
+        "total": 1,
+        "kept": 1,
+        "skipped": 0
+      },
+      "RTXPro6000D-PyTorch": {
+        "total": 21,
+        "kept": 21,
+        "skipped": 0
+      },
+      "DGX_H100-PyTorch": {
+        "total": 177,
+        "kept": 177,
+        "skipped": 0
+      },
+      "DGX_B200-CPP": {
+        "total": 1,
+        "kept": 1,
+        "skipped": 0
+      },
+      "DGX_B200-PyTorch": {
+        "total": 318,
+        "kept": 318,
+        "skipped": 0
+      },
+      "B300-PyTorch": {
+        "total": 83,
+        "kept": 83,
+        "skipped": 0
+      },
+      "CPU-Generic-arm": {
+        "total": 174,
+        "kept": 174,
+        "skipped": 0
+      },
+      "GB10-PyTorch": {
+        "total": 4,
+        "kept": 4,
+        "skipped": 0
+      }
+    }
+  },
+  "effective_metrics": {
+    "total": 1254,
+    "kept": 1254,
+    "skipped": 0,
+    "families": {
+      "CPU-Generic-x86": {
+        "total": 174,
+        "kept": 174,
+        "skipped": 0
+      },
+      "A10-PyTorch": {
+        "total": 195,
+        "kept": 195,
+        "skipped": 0
+      },
+      "A30-PyTorch": {
+        "total": 10,
+        "kept": 10,
+        "skipped": 0
+      },
+      "A30-CPP": {
+        "total": 2,
+        "kept": 2,
+        "skipped": 0
+      },
+      "A100X-PyTorch": {
+        "total": 23,
+        "kept": 23,
+        "skipped": 0
+      },
+      "L40S-PyTorch": {
+        "total": 29,
+        "kept": 29,
+        "skipped": 0
+      },
+      "H100_PCIe-PyTorch-Ray": {
+        "total": 24,
+        "kept": 24,
+        "skipped": 0
+      },
+      "H100_PCIe-CPP": {
+        "total": 4,
+        "kept": 4,
+        "skipped": 0
+      },
+      "RTX5090-PyTorch": {
+        "total": 7,
+        "kept": 7,
+        "skipped": 0
+      },
+      "RTX5080-PyTorch": {
+        "total": 7,
+        "kept": 7,
+        "skipped": 0
+      },
+      "H100_PCIe-PyTorch-Perf": {
+        "total": 1,
+        "kept": 1,
+        "skipped": 0
+      },
+      "RTXPro6000D-PyTorch": {
+        "total": 21,
+        "kept": 21,
+        "skipped": 0
+      },
+      "DGX_H100-PyTorch": {
+        "total": 177,
+        "kept": 177,
+        "skipped": 0
+      },
+      "DGX_B200-CPP": {
+        "total": 1,
+        "kept": 1,
+        "skipped": 0
+      },
+      "DGX_B200-PyTorch": {
+        "total": 318,
+        "kept": 318,
+        "skipped": 0
+      },
+      "B300-PyTorch": {
+        "total": 83,
+        "kept": 83,
+        "skipped": 0
+      },
+      "CPU-Generic-arm": {
+        "total": 174,
+        "kept": 174,
+        "skipped": 0
+      },
+      "GB10-PyTorch": {
+        "total": 4,
+        "kept": 4,
+        "skipped": 0
+      }
+    }
+  }
+}

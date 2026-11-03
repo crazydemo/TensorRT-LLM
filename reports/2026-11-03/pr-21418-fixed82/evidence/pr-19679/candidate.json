@@ -1,0 +1,62 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "waives",
+      "blocks": 2,
+      "stages": 6
+    },
+    {
+      "source": "testdef",
+      "blocks": 5,
+      "stages": 21
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "docker/Dockerfile.multi",
+        "docker/Makefile",
+        "docker/common/install_cuda_libs.sh",
+        "docker/common/install_mooncake.sh",
+        "docker/common/install_pytorch.sh",
+        "jenkins/L0_Test.groovy",
+        "jenkins/current_image_tags.properties",
+        "requirements.txt",
+        "tensorrt_llm/serve/responses_utils.py"
+      ],
+      "coverage_declined": "coverage tier declined: non-Python residual file: docker/Dockerfile.multi"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "docker/Dockerfile.multi",
+    "docker/Makefile",
+    "docker/common/install_cuda_libs.sh",
+    "docker/common/install_mooncake.sh",
+    "docker/common/install_pytorch.sh",
+    "jenkins/L0_Test.groovy",
+    "jenkins/current_image_tags.properties",
+    "requirements.txt",
+    "tensorrt_llm/serve/responses_utils.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: non-Python residual file: docker/Dockerfile.multi",
+  "coverage_decline_category": "non_python",
+  "coverage_no_diff_files": 0
+}

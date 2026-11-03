@@ -1,0 +1,1045 @@
+{
+  "total_prs": 82,
+  "compatible_hits": 30,
+  "fallback_prs": 52,
+  "classification": "mutually exclusive current first blocking reason; compatibility conflicts classified after candidate generation",
+  "boundary": "Only the first observed blocker is recorded for each PR. Removing it can reveal another blocker. Historical labels are comparison data, not current classification.",
+  "groups": [
+    {
+      "key": "non_python",
+      "label": "Preflight · 非 Python residual",
+      "stage": "路径资格预检",
+      "description": "Tier 1 留下 C++、CUDA、Groovy、CMake、JSON 等非 Python residual，超出 Python AST/coverage tier 的分析范围。",
+      "count": 22,
+      "fraction_of_52": 0.4230769230769231,
+      "prs": [
+        "17067",
+        "17306",
+        "18485",
+        "18677",
+        "18802",
+        "19183",
+        "19359",
+        "19431",
+        "19445",
+        "19484",
+        "19552",
+        "19589",
+        "19600",
+        "19603",
+        "19679",
+        "19709",
+        "19821",
+        "19825",
+        "19829",
+        "19830",
+        "19873",
+        "19957"
+      ],
+      "entries": [
+        {
+          "pr": "19957",
+          "sha": "edc41150e6bd51095b207efa2c4a4eeee7b6ce63",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: 3rdparty/CMakeLists.txt",
+          "residual_files": [
+            "3rdparty/CMakeLists.txt"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19873",
+          "sha": "8f973fbe7dd174d0783dc04376635a0ddb2f01fc",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/common/envUtils.cpp",
+          "residual_files": [
+            "cpp/tensorrt_llm/common/envUtils.cpp",
+            "cpp/tensorrt_llm/common/envUtils.h",
+            "cpp/tensorrt_llm/kernels/fmhaDispatcher.cpp"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19830",
+          "sha": "089d586d83dbb125dad5bece6d286069221c5547",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/kernels/kdaDecode/kdaDecodeLegacy.cu",
+          "residual_files": [
+            "cpp/tensorrt_llm/kernels/kdaDecode/kdaDecodeLegacy.cu"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19829",
+          "sha": "f891b3d9bae1d8d1e6b3023e46f3b5dd3a2fe7b5",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/kernels/kimiK3AttnRes/attnResFwd.cu",
+          "residual_files": [
+            "cpp/tensorrt_llm/kernels/kimiK3AttnRes/attnResFwd.cu",
+            "cpp/tensorrt_llm/kernels/kimiK3AttnRes/attnResFwdPersistentFused.cu"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19825",
+          "sha": "ac3ec509195eda8d37026287c1f282b2a9cb2fce",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fmhaRunner.cpp",
+          "residual_files": [
+            "cpp/kernels/fmha_v2/setup.py",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fmhaRunner.cpp"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19821",
+          "sha": "ce2e2f8b7023f385711c2395ac83e046fbcbea84",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/CMakeLists.txt",
+          "residual_files": [
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/CMakeLists.txt",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/batch.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/batch.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCache.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCache.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCacheManager.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCacheManager.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/lifeCycleRegistry.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/page.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/page.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/storageManager.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/storageManager.h",
+            "cpp/tensorrt_llm/nanobind/batch_manager/kvCacheManagerV2.cpp",
+            "cpp/tests/unit_tests/batch_manager/kvCacheManagerV2ColdPageTest.cpp",
+            "cpp/tests/unit_tests/batch_manager/kvCacheManagerV2ConcurrencyTest.cpp",
+            "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+            "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.py",
+            "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.pyi"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19709",
+          "sha": "cb03225c137d3d7c07c0dd664ad9d62b81f04c3e",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: 3rdparty/patches/msa_strided_paged_kv.patch",
+          "residual_files": [
+            "3rdparty/patches/msa_strided_paged_kv.patch"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19679",
+          "sha": "b5a0afd6b85d98fb84a33f17a607bd445c487ec3",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: docker/Dockerfile.multi",
+          "residual_files": [
+            "docker/Dockerfile.multi",
+            "docker/Makefile",
+            "docker/common/install_cuda_libs.sh",
+            "docker/common/install_mooncake.sh",
+            "docker/common/install_pytorch.sh",
+            "jenkins/L0_Test.groovy",
+            "jenkins/current_image_tags.properties",
+            "requirements.txt",
+            "tensorrt_llm/serve/responses_utils.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19603",
+          "sha": "0970204df7e6b91790c0dfaf7eb986d4b5f9c4a3",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: jenkins/Build.groovy",
+          "residual_files": [
+            "jenkins/Build.groovy",
+            "jenkins/L0_MergeRequest.groovy",
+            "jenkins/L0_Test.groovy"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19600",
+          "sha": "58fd2d3fc854cb93a04b8286bd1c1c31c0252b1f",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: jenkins/L0_Test.groovy",
+          "residual_files": [
+            "jenkins/L0_Test.groovy",
+            "jenkins/scripts/install_mamba.sh",
+            "jenkins/scripts/slurm_install.sh"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19589",
+          "sha": "40eb9cb079b23e07e1e2dc80d1b342b0223dddeb",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: jenkins/Build.groovy",
+          "residual_files": [
+            "jenkins/Build.groovy"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19552",
+          "sha": "82f980469fabc288891314a61348b076d9f5388c",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/CMakeLists.txt",
+          "residual_files": [
+            "cpp/CMakeLists.txt",
+            "cpp/cmake/modules/FindNUMA.cmake",
+            "cpp/conan.lock",
+            "cpp/conandata.yml",
+            "cpp/conanfile.py",
+            "cpp/libnuma_conan.py",
+            "cpp/tensorrt_llm/runtime/CMakeLists.txt",
+            "docker/Makefile",
+            "jenkins/Build.groovy",
+            "jenkins/L0_MergeRequest.groovy",
+            "jenkins/L0_Test.groovy",
+            "scripts/build_wheel.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19484",
+          "sha": "e5a9341138921783ba79f061a6d567c487f3cfef",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/include/tensorrt_llm/batch_manager/llmRequest.h",
+          "residual_files": [
+            "cpp/include/tensorrt_llm/batch_manager/llmRequest.h",
+            "cpp/include/tensorrt_llm/executor/executor.h",
+            "cpp/tensorrt_llm/batch_manager/llmRequest.cpp",
+            "cpp/tensorrt_llm/executor/request.cpp",
+            "cpp/tensorrt_llm/executor/requestImpl.h",
+            "cpp/tensorrt_llm/executor/serialization.cpp",
+            "cpp/tensorrt_llm/nanobind/batch_manager/bindings.cpp",
+            "cpp/tensorrt_llm/nanobind/executor/request.cpp",
+            "cpp/tensorrt_llm/runtime/torchUtils.h",
+            "cpp/tests/unit_tests/batch_manager/agentTreeTest.cpp",
+            "cpp/tests/unit_tests/batch_manager/kvCacheManagerTest.cpp",
+            "cpp/tests/unit_tests/batch_manager/llmRequestTest.cpp",
+            "cpp/tests/unit_tests/batch_manager/microBatchSchedulerTest.cpp",
+            "cpp/tests/unit_tests/executor/requestTest.cpp",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/no_kv_cache.py",
+            "tensorrt_llm/_torch/pyexecutor/guided_decoder.py",
+            "tensorrt_llm/_torch/pyexecutor/llm_request.py",
+            "tensorrt_llm/_torch/pyexecutor/py_executor.py",
+            "tensorrt_llm/_torch/pyexecutor/sampler/sampler.py",
+            "tensorrt_llm/executor/base_worker.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19445",
+          "sha": "2ef828c4c982a4530e2e593c7b771627ee0c6dde",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/CMakeLists.txt",
+          "residual_files": [
+            "cpp/tensorrt_llm/CMakeLists.txt",
+            "cpp/tensorrt_llm/batch_manager/CMakeLists.txt",
+            "cpp/tensorrt_llm/executor/CMakeLists.txt",
+            "cpp/tensorrt_llm/kernels/cutlass_kernels/CMakeLists.txt",
+            "cpp/tensorrt_llm/nanobind/CMakeLists.txt",
+            "cpp/tensorrt_llm/runtime/CMakeLists.txt",
+            "cpp/tensorrt_llm/thop/CMakeLists.txt",
+            "cpp/tensorrt_llm/thop/moe/CMakeLists.txt"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19431",
+          "sha": "dc6f88de69ce869dc0ce095c888a70705a8b663c",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: jenkins/BuildDockerImage.groovy",
+          "residual_files": [
+            "jenkins/BuildDockerImage.groovy",
+            "jenkins/L0_MergeRequest.groovy",
+            "jenkins/L0_Test.groovy",
+            "scripts/bolt/internal/apply_latest.sh",
+            "scripts/bolt/internal/stage_llvm_bolt.sh",
+            "scripts/get_wheel_from_package.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19359",
+          "sha": "db359c23ccc5ee7a4e3aebd3cd30c379950d6529",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/CMakeLists.txt",
+          "residual_files": [
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/CMakeLists.txt",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/eventData.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/eventData.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/eventManager.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/eventManager.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/streamingEventSink.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/streamingEventSink.h",
+            "cpp/tensorrt_llm/nanobind/batch_manager/kvCacheManagerV2.cpp",
+            "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+            "tensorrt_llm/_torch/pyexecutor/kv_cache_events.py",
+            "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.py",
+            "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.pyi",
+            "tensorrt_llm/runtime/kv_cache_manager_v2/_introspection.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19183",
+          "sha": "bcaf5e6c97a8b116b33457630655601206cb10a2",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/thop/moe/communication/moeAlltoAllOp.cpp",
+          "residual_files": [
+            "cpp/tensorrt_llm/thop/moe/communication/moeAlltoAllOp.cpp",
+            "tensorrt_llm/_torch/custom_ops/torch_custom_ops.py",
+            "tensorrt_llm/_torch/cute_dsl_kernels/rubin/moe/manual_mma_128dp.py",
+            "tensorrt_llm/_torch/cute_dsl_kernels/rubin/moe/utils.py",
+            "tensorrt_llm/_torch/modules/dwdp/setup.py",
+            "tensorrt_llm/_torch/modules/kimi_kda/kimi_kda_mixer.py",
+            "tensorrt_llm/_torch/modules/situ.py",
+            "tensorrt_llm/_torch/moe/fused_moe/communication/nvlink_one_sided.py",
+            "tensorrt_llm/_torch/moe/fused_moe/fused_moe_cutlass.py",
+            "tensorrt_llm/_torch/moe/fused_moe/mega_moe/mega_moe_cute_dsl.py",
+            "tensorrt_llm/_torch/moe/fused_moe/mega_moe/mega_moe_deepgemm.py",
+            "tensorrt_llm/_torch/pyexecutor/_util.py",
+            "tensorrt_llm/executor/postproc_worker.py",
+            "tensorrt_llm/executor/result.py",
+            "tensorrt_llm/executor/worker.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "18802",
+          "sha": "bba2b1763589d5d2e81dbd0cc30ae4a5f82690e8",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: jenkins/L0_MergeRequest.groovy",
+          "residual_files": [
+            "jenkins/L0_MergeRequest.groovy"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "18677",
+          "sha": "687af96ddb135b7e22bccc4a882e3ad80a635239",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: jenkins/L0_MergeRequest.groovy",
+          "residual_files": [
+            "jenkins/L0_MergeRequest.groovy"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "18485",
+          "sha": "3beeef3a5f39bb42d9d2c3c45a9c5e2565e5a3d4",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/kernels/IndexerTopK.h",
+          "residual_files": [
+            "cpp/tensorrt_llm/kernels/IndexerTopK.h",
+            "cpp/tensorrt_llm/kernels/compressorKernels/compressorKernels.cu",
+            "cpp/tensorrt_llm/kernels/compressorKernels/compressorKernels.h",
+            "cpp/tensorrt_llm/kernels/indexerTopK.cu",
+            "cpp/tensorrt_llm/thop/IndexerTopKOp.cpp",
+            "cpp/tensorrt_llm/thop/compressorOp.cpp",
+            "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/compressor.py",
+            "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/metadata.py",
+            "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/module.py",
+            "tensorrt_llm/_torch/attention/backends/sparse/dsa/indexer.py",
+            "tensorrt_llm/_torch/attention/backends/sparse/dsa/metadata.py",
+            "tensorrt_llm/_torch/attention/backends/trtllm.py",
+            "tensorrt_llm/_torch/attention/mla.py",
+            "tensorrt_llm/_torch/custom_ops/cpp_custom_ops.py",
+            "tensorrt_llm/_torch/modules/top_k.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "17306",
+          "sha": "2b2c5be2dc092fcfb4deed5459bce91626be4838",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.cpp",
+          "residual_files": [
+            "cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.cpp",
+            "cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/config.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCache.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCache.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCacheManager.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCacheManager.h",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/page.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/storageManager.cpp",
+            "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/storageManager.h",
+            "cpp/tensorrt_llm/nanobind/batch_manager/kvCacheManagerV2.cpp",
+            "cpp/tensorrt_llm/nanobind/batch_manager/kvCacheManagerV2Utils.cpp",
+            "tensorrt_llm/_torch/pyexecutor/_util.py",
+            "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+            "tensorrt_llm/_torch/pyexecutor/py_executor.py",
+            "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.py",
+            "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.pyi"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "17067",
+          "sha": "ce436a9b4ebc6892b7dbf4c5a3a6d5c5d60bc485",
+          "historical_reason": "preflight 挡住",
+          "current_category": "non_python",
+          "current_reason": "coverage tier declined: non-Python residual file: tensorrt_llm/usage/llm_args_golden_manifest.json",
+          "residual_files": [
+            "tensorrt_llm/_torch/models/_arch_index.py",
+            "tensorrt_llm/_torch/models/checkpoints/hf/exaone_moe_weight_mapper.py",
+            "tensorrt_llm/_torch/models/modeling_deepseekv3.py",
+            "tensorrt_llm/_torch/models/modeling_exaone_moe.py",
+            "tensorrt_llm/llmapi/llm_args.py",
+            "tensorrt_llm/llmapi/reasoning_parser.py",
+            "tensorrt_llm/usage/architecture_allowlist.py",
+            "tensorrt_llm/usage/llm_args_golden_manifest.json"
+          ],
+          "compatibility": "not_needed_fallback"
+        }
+      ]
+    },
+    {
+      "key": "import_executed",
+      "label": "Import execution · 导入执行无法界定",
+      "stage": "AST / 导入影响分析",
+      "description": "变更发生在模块、类定义、签名或其他 import-time 逻辑，现有分析无法给出可靠的测试影响范围。",
+      "count": 17,
+      "fraction_of_52": 0.3269230769230769,
+      "prs": [
+        "17476",
+        "18813",
+        "19213",
+        "19306",
+        "19553",
+        "19583",
+        "19598",
+        "19643",
+        "19696",
+        "19731",
+        "19746",
+        "19748",
+        "19801",
+        "19811",
+        "19885",
+        "19899",
+        "19935"
+      ],
+      "entries": [
+        {
+          "pr": "19935",
+          "sha": "ff94288d99c7237aca5d49ab7f7165aaf07b8b53",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/llmapi/reasoning_parser.py::<module> (class/signature import change)",
+          "residual_files": [
+            "tensorrt_llm/llmapi/reasoning_parser.py",
+            "tensorrt_llm/serve/tool_parser/base_tool_parser.py",
+            "tensorrt_llm/serve/tool_parser/glm47_parser.py",
+            "tensorrt_llm/serve/tool_parser/glm4_parser.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19899",
+          "sha": "b57220da7b7a0757359ad769a304a0abcac85836",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/compilation/multi_stream/auto_multi_stream.py::<module> (class/signature import change)",
+          "residual_files": [
+            "tensorrt_llm/_torch/compilation/multi_stream/auto_multi_stream.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19885",
+          "sha": "807a036f064038d8d0fe1bdf64bbac579d648be1",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/custom_ops/cute_dsl_kimi_k3_custom_ops.py::<module> (effectful module statement)",
+          "residual_files": [
+            "tensorrt_llm/_torch/custom_ops/cute_dsl_kimi_k3_custom_ops.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19811",
+          "sha": "276cc12ff547ee46aff808e0b2f1d1fdc5674639",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/usage/llmapi_config.py::<module> (class/signature import change)",
+          "residual_files": [
+            "tensorrt_llm/usage/llmapi_config.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19801",
+          "sha": "d2487301cac3e433c35facef2d4521e77a603042",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/pyexecutor/scheduler/scheduler.py::<module> (import-time binding consumer)",
+          "residual_files": [
+            "tensorrt_llm/_torch/pyexecutor/scheduler/scheduler.py",
+            "tensorrt_llm/_torch/pyexecutor/scheduler/scheduler_v2.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19748",
+          "sha": "b2d9ec3be04069e4e558ac9227e56de6b1de157a",
+          "historical_reason": "DB 补丁冲突",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/runner.py::<module> (class/signature import change)",
+          "residual_files": [
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/runner.py",
+            "tensorrt_llm/_torch/pyexecutor/py_executor_creator.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19746",
+          "sha": "348192ae71f465f5ca95097d42cad3a14459b4c3",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/attention/backends/fmha/fallback.py::<module> (import-time binding consumer)",
+          "residual_files": [
+            "tensorrt_llm/_torch/attention/backends/fmha/fallback.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19731",
+          "sha": "e0d1e933c75d6b884b8f7f92c64e9a9a262c8404",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/cache_manager.py::<module> (effectful module statement)",
+          "residual_files": [
+            "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/cache_manager.py",
+            "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/kernels/msa_scatter.py",
+            "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/kernels/trtllm_gen_dense_decode.py",
+            "tensorrt_llm/_torch/models/modeling_minimaxm3.py",
+            "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19696",
+          "sha": "b3be283b978f15ba29984bf3c26936e59fd60f46",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/pyexecutor/engine/runners/common.py::<module> (effectful module statement)",
+          "residual_files": [
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/common.py",
+            "tensorrt_llm/_torch/pyexecutor/model_engine.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19643",
+          "sha": "1ab9f5525e4a7b0f1271fe2c5fd01a4dac7cc7c8",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/pyexecutor/pp_utils.py::<module> (effectful module statement)",
+          "residual_files": [
+            "tensorrt_llm/_torch/pyexecutor/pp_utils.py",
+            "tensorrt_llm/_torch/pyexecutor/py_executor.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19598",
+          "sha": "46473dcfb79defad5aebe74e7fdc367b5e00fd58",
+          "historical_reason": "拿不到 DB",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/bench/benchmark/low_latency.py::<module> (unresolved import replacement)",
+          "residual_files": [
+            "tensorrt_llm/bench/benchmark/low_latency.py",
+            "tensorrt_llm/bench/benchmark/throughput.py",
+            "tensorrt_llm/commands/_telemetry.py",
+            "tensorrt_llm/commands/serve.py",
+            "tensorrt_llm/llmapi/llm.py",
+            "tensorrt_llm/usage/_startup.py",
+            "tensorrt_llm/usage/usage_lib.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19583",
+          "sha": "70193ec43b48d4edac734829d9f257c02ed12b14",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/bench/benchmark/__init__.py::<module> (unresolved import replacement)",
+          "residual_files": [
+            "tensorrt_llm/bench/benchmark/__init__.py",
+            "tensorrt_llm/bench/benchmark/low_latency.py",
+            "tensorrt_llm/bench/benchmark/utils/general.py",
+            "tensorrt_llm/bench/dataclasses/configuration.py",
+            "tensorrt_llm/executor/executor.py",
+            "tensorrt_llm/llmapi/llm_utils.py",
+            "tensorrt_llm/sampling_params.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19553",
+          "sha": "b8af588782192366e396ba8f1878c41a36587594",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/tokenizer/tokenizer.py::<module> (effectful module statement)",
+          "residual_files": [
+            "tensorrt_llm/tokenizer/tokenizer.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19306",
+          "sha": "7329182abeee0d226c5b5d9f7eab6150aff54ded",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/attention/backends/sparse/dsa/metadata.py::<module> (class/signature import change)",
+          "residual_files": [
+            "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/metadata.py",
+            "tensorrt_llm/_torch/attention/backends/sparse/dsa/metadata.py",
+            "tensorrt_llm/_torch/attention/backends/trtllm.py",
+            "tensorrt_llm/_torch/pyexecutor/cuda_graph_runner.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19213",
+          "sha": "af645b780699206e532af3ab21bfe1745e3e2b49",
+          "historical_reason": "新文件",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/cache_manager.py::<module> (import target is not a static function: tensorrt_llm/runtime/kv_cache_manager_v2/__init__.py::BatchDesc)",
+          "residual_files": [
+            "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/cache_manager.py",
+            "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+            "tensorrt_llm/tools/layer_wise_benchmarks/runner.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "18813",
+          "sha": "78dac6256b82eeffc06cd5ef9bfe6571dffaa5b9",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/custom_ops/torch_custom_ops.py::<module> (class/signature import change)",
+          "residual_files": [
+            "tensorrt_llm/_torch/custom_ops/cute_dsl_kimi_k3_custom_ops.py",
+            "tensorrt_llm/_torch/custom_ops/torch_custom_ops.py",
+            "tensorrt_llm/_torch/modules/kimi_kda/_kda_kernels.py",
+            "tensorrt_llm/_torch/modules/kimi_kda/kimi_k3_mamba_metadata.py",
+            "tensorrt_llm/_torch/modules/kimi_kda/kimi_kda_mixer.py",
+            "tensorrt_llm/_torch/modules/mamba/mamba2_metadata.py",
+            "tensorrt_llm/_torch/pyexecutor/model_engine.py",
+            "tensorrt_llm/_torch/utils.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "17476",
+          "sha": "ace058d1f5f176673f221069baef971cfc891f90",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "import_executed",
+          "current_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/custom_ops/torch_custom_ops.py::<module> (ambiguous class/function declaration)",
+          "residual_files": [
+            "tensorrt_llm/_torch/custom_ops/torch_custom_ops.py",
+            "tensorrt_llm/_torch/modules/gated_mlp.py",
+            "tensorrt_llm/_torch/modules/linear.py",
+            "tensorrt_llm/_torch/modules/swiglu.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        }
+      ]
+    },
+    {
+      "key": "zero_touch",
+      "label": "Coverage data · 缺少可归属记录",
+      "stage": "DB 数据资格检查",
+      "description": "至少一个 residual 文件没有可归属到测试的 touch rows；不能把未记录视为没有依赖。",
+      "count": 4,
+      "fraction_of_52": 0.07692307692307693,
+      "prs": [
+        "19178",
+        "19539",
+        "19892",
+        "19896"
+      ],
+      "entries": [
+        {
+          "pr": "19896",
+          "sha": "2681ed10c9cc5f2ea389c9d439e3966328c0c316",
+          "historical_reason": "DB 补丁冲突",
+          "current_category": "zero_touch",
+          "current_reason": "coverage tier declined: zero-touch residual file (new/uninstrumented): tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/speculative.py",
+          "residual_files": [
+            "tensorrt_llm/_torch/models/modeling_multimodal_mixin.py",
+            "tensorrt_llm/_torch/models/modeling_qwen2vl.py",
+            "tensorrt_llm/_torch/models/modeling_qwen3vl.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/lora.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/metadata.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/__init__.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/common.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/__init__.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/config.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/runner.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/speculative.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/encoder_decoder.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/no_kv_cache.py",
+            "tensorrt_llm/_torch/pyexecutor/engine/runners/pooling.py",
+            "tensorrt_llm/_torch/pyexecutor/guided_decoder.py",
+            "tensorrt_llm/_torch/pyexecutor/llm_request.py",
+            "tensorrt_llm/_torch/pyexecutor/model_engine.py",
+            "tensorrt_llm/_torch/pyexecutor/py_executor.py",
+            "tensorrt_llm/_torch/route_capture.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19892",
+          "sha": "2e2a3cb925ee6c6da40bbecf91dd50f4d1d5f09b",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "zero_touch",
+          "current_reason": "coverage tier declined: zero-touch residual file (new/uninstrumented): tensorrt_llm/_torch/models/modeling_qwen_image_bench.py",
+          "residual_files": [
+            "tensorrt_llm/_torch/models/__init__.py",
+            "tensorrt_llm/_torch/models/_arch_index.py",
+            "tensorrt_llm/_torch/models/checkpoints/hf/qwen3_5_weight_mapper.py",
+            "tensorrt_llm/_torch/models/modeling_qwen3vl.py",
+            "tensorrt_llm/_torch/models/modeling_qwen_image_bench.py",
+            "tensorrt_llm/_torch/pyexecutor/config_utils.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19539",
+          "sha": "481e98eb4f0f47af8a99069128ecef35f43fa970",
+          "historical_reason": "preflight 挡住",
+          "current_category": "zero_touch",
+          "current_reason": "coverage tier declined: zero-touch residual file (new/uninstrumented): tensorrt_llm/_torch/cute_dsl_kernels/rubin/moe/rubin_contiguous_grouped_blockscaled_gemm_fused_fc12.py",
+          "residual_files": [
+            "tensorrt_llm/_torch/cute_dsl_kernels/rubin/moe/rubin_contiguous_grouped_blockscaled_gemm_fused_fc12.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19178",
+          "sha": "dcdd9576b421f9c629ef0622a54b9e2e6a094e01",
+          "historical_reason": "preflight 挡住",
+          "current_category": "zero_touch",
+          "current_reason": "coverage tier declined: zero-touch residual file (new/uninstrumented): tests/integration/defs/stress_test/stress_test.py",
+          "residual_files": [
+            "tests/integration/defs/conftest.py",
+            "tests/integration/defs/stress_test/stress_test.py",
+            "tests/integration/defs/triton_server/conftest.py",
+            "tests/test_common/llm_data.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        }
+      ]
+    },
+    {
+      "key": "compatibility_conflict",
+      "label": "Patch compatibility · DB 版本冲突",
+      "stage": "候选生成后的 patch 兼容 gate",
+      "description": "已经得到 Tier 2 候选，但 residual patch 与 build 3049 DB 对应源码冲突，因此最终回退。",
+      "count": 4,
+      "fraction_of_52": 0.07692307692307693,
+      "prs": [
+        "19613",
+        "19744",
+        "19749",
+        "19768"
+      ],
+      "entries": [
+        {
+          "pr": "19768",
+          "sha": "d27e97f6dece43028c40fb602cb77bb5ab28132d",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "compatibility_conflict",
+          "current_reason": "Residual patch 冲突：tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/msa_backend.py",
+          "residual_files": [
+            "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/msa_backend.py"
+          ],
+          "compatibility": "conflict"
+        },
+        {
+          "pr": "19749",
+          "sha": "535c3e08b6b363c29246d58755ff117fd65a9b94",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "compatibility_conflict",
+          "current_reason": "Residual patch 冲突：tensorrt_llm/_torch/moe/fused_moe/configurable_moe.py, tensorrt_llm/_torch/moe/fused_moe/create_moe.py, tensorrt_llm/_torch/moe/fused_moe/impl_blocks.py, tensorrt_llm/_torch/moe/fused_moe/moe_op_backend.py",
+          "residual_files": [
+            "tensorrt_llm/_torch/moe/fused_moe/communication/base.py",
+            "tensorrt_llm/_torch/moe/fused_moe/communication/deep_ep_low_latency.py",
+            "tensorrt_llm/_torch/moe/fused_moe/configurable_moe.py",
+            "tensorrt_llm/_torch/moe/fused_moe/create_moe.py",
+            "tensorrt_llm/_torch/moe/fused_moe/impl_blocks.py",
+            "tensorrt_llm/_torch/moe/fused_moe/moe_op_backend.py",
+            "tensorrt_llm/_torch/moe/fused_moe/moe_scheduler.py",
+            "tensorrt_llm/_torch/moe/fused_moe/trtllm_gen/flashinfer_bf16.py",
+            "tensorrt_llm/_torch/moe/fused_moe/trtllm_gen/fp4_block_scale.py",
+            "tensorrt_llm/_torch/moe/fused_moe/trtllm_gen/kernel_inputs.py",
+            "tensorrt_llm/_torch/moe/fused_moe/trtllm_gen/trtllm_w4a8_nvfp4_fp8.py"
+          ],
+          "compatibility": "conflict"
+        },
+        {
+          "pr": "19744",
+          "sha": "7efa053a8908ea84f4d000cea02024d2ac564ffb",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "compatibility_conflict",
+          "current_reason": "Residual patch 冲突：tensorrt_llm/_torch/pyexecutor/_util.py, tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+          "residual_files": [
+            "tensorrt_llm/_torch/pyexecutor/_util.py",
+            "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py"
+          ],
+          "compatibility": "conflict"
+        },
+        {
+          "pr": "19613",
+          "sha": "6603d00dc2db8931e5ca0da34c03a3f5923cbe16",
+          "historical_reason": "import 期代码挡住",
+          "current_category": "compatibility_conflict",
+          "current_reason": "Residual patch 冲突：tensorrt_llm/_torch/models/modeling_minimaxm3_vl.py, tensorrt_llm/inputs/registry.py",
+          "residual_files": [
+            "tensorrt_llm/_torch/models/modeling_minimaxm3_vl.py",
+            "tensorrt_llm/inputs/registry.py"
+          ],
+          "compatibility": "conflict"
+        }
+      ]
+    },
+    {
+      "key": "shared_test_infrastructure",
+      "label": "Shared pytest state · 共享测试状态",
+      "stage": "AST / 共享状态依赖分析",
+      "description": "变更触及共享 fixture、pytest lifecycle hook 或有状态 helper；执行记录不能完整代表所有缓存消费者。",
+      "count": 3,
+      "fraction_of_52": 0.057692307692307696,
+      "prs": [
+        "19622",
+        "19770",
+        "19872"
+      ],
+      "entries": [
+        {
+          "pr": "19872",
+          "sha": "dc56f5ccb2e14cc242dccd7078e69883856c9442",
+          "historical_reason": "preflight 挡住",
+          "current_category": "shared_test_infrastructure",
+          "current_reason": "coverage tier declined: shared test infrastructure change: tests/test_common/magic_import_hooks.py::pytest_sessionfinish (pytest session/collection hook)",
+          "residual_files": [
+            "tests/test_common/magic_import_hooks.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19770",
+          "sha": "cf5dc9f970e10751f0d8e5d4daa91b50d95f86bb",
+          "historical_reason": "preflight 挡住",
+          "current_category": "shared_test_infrastructure",
+          "current_reason": "coverage tier declined: shared test infrastructure change: tests/test_common/session_reuse_hooks.py::pytest_runtest_logfinish (pytest session/collection hook)",
+          "residual_files": [
+            "tests/test_common/session_reuse.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        },
+        {
+          "pr": "19622",
+          "sha": "446e8d92361059cfb32566462eab179fd5305939",
+          "historical_reason": "preflight 挡住",
+          "current_category": "shared_test_infrastructure",
+          "current_reason": "coverage tier declined: shared test infrastructure change: tests/test_common/s3_output.py::UploadLogPlugin.__init__ (stateful helper)",
+          "residual_files": [
+            "tests/test_common/s3_output.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        }
+      ]
+    },
+    {
+      "key": "rule_forced_fallback",
+      "label": "Rule fallback · 规则主动回退",
+      "stage": "Tier 1 规则",
+      "description": "至少一条规则返回 scope=null，强制保留完整运行；coverage tier 不覆盖该决定。",
+      "count": 1,
+      "fraction_of_52": 0.019230769230769232,
+      "prs": [
+        "18496"
+      ],
+      "entries": [
+        {
+          "pr": "18496",
+          "sha": "d3c825800d93a704c0a48caf40576d9fa2f95594",
+          "historical_reason": "规则强制",
+          "current_category": "rule_forced_fallback",
+          "current_reason": "coverage tier skipped: a rule forced fallback (scope=null)",
+          "residual_files": [
+            "cpp/kernels/fmha_v2/fmha_test.py",
+            "cpp/kernels/fmha_v2/setup.py",
+            "cpp/kernels/fmha_v2/src/fmha/warpspec/compute.h",
+            "cpp/kernels/fmha_v2/src/fmha/warpspec/dma.h",
+            "cpp/kernels/fmha_v2/src/fmha/warpspec/epilogue.h",
+            "cpp/kernels/fmha_v2/src/fmha/warpspec/kernel_traits.h",
+            "cpp/kernels/fmha_v2/src/fused_multihead_attention.cpp",
+            "cpp/kernels/fmha_v2/src/fused_multihead_attention_sage_utils.h",
+            "cpp/tensorrt_llm/common/attentionOp.cpp",
+            "cpp/tensorrt_llm/common/attentionOp.h",
+            "cpp/tensorrt_llm/common/attentionWorkspace.h",
+            "cpp/tensorrt_llm/common/sagePartition.h",
+            "cpp/tensorrt_llm/common/sageQuant.cu",
+            "cpp/tensorrt_llm/common/sageQuant.h",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_64_256_S_q_k_v_128_sage_2_16_1_output_bf16_tma_ws_sm90.cubin.tar.zst",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_64_256_S_qkv_128_sage_64_64_256_output_bf16_tma_ws_sm90.cubin.tar.zst",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_128_sage_64_32_32_output_bf16_sm89.cubin.tar.zst",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_128_sage_64_32_32_output_fp16_sm89.cubin.tar.zst",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_80_sage_64_32_32_output_bf16_sm89.cubin.tar.zst",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_80_sage_64_32_32_output_fp16_sm89.cubin.tar.zst",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fmhaRunner.cpp",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fmhaRunner.h",
+            "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fused_multihead_attention_common.h",
+            "cpp/tensorrt_llm/kernels/fmhaDispatcher.cpp",
+            "cpp/tensorrt_llm/kernels/multiHeadAttentionCommon.h",
+            "cpp/tensorrt_llm/nanobind/thop/bindings.cpp",
+            "cpp/tensorrt_llm/thop/attentionOp.cpp",
+            "cpp/tensorrt_llm/thop/attentionOp.h",
+            "tensorrt_llm/_torch/attention/backends/fmha/fallback.py",
+            "tensorrt_llm/_torch/attention/backends/interface.py"
+          ],
+          "compatibility": "not_needed_fallback"
+        }
+      ]
+    },
+    {
+      "key": "no_stages_resolved",
+      "label": "Stage resolution · 未解析出阶段",
+      "stage": "Tier 1 阶段解析",
+      "description": "所有文件都被规则接管，但规则没有解析出目标 stage。no_residual 只是 coverage 跳过原因；最终根因是 no_stages_resolved。",
+      "count": 1,
+      "fraction_of_52": 0.019230769230769232,
+      "prs": [
+        "19810"
+      ],
+      "entries": [
+        {
+          "pr": "19810",
+          "sha": "72688933d5fe3b24a7dd4a315722d102a33f3c54",
+          "historical_reason": "拿不到 DB",
+          "current_category": "no_stages_resolved",
+          "current_reason": "最终 fallback: no_stages_resolved；coverage tier skipped: no residual (all files handled by rules)",
+          "residual_files": [],
+          "compatibility": "not_needed_fallback"
+        }
+      ]
+    }
+  ],
+  "historical_remaining_matrix": {
+    "preflight 挡住": {
+      "non_python": 22,
+      "zero_touch": 2,
+      "shared_test_infrastructure": 3
+    },
+    "DB 补丁冲突": {
+      "zero_touch": 1,
+      "import_executed": 1
+    },
+    "import 期代码挡住": {
+      "zero_touch": 1,
+      "import_executed": 14,
+      "compatibility_conflict": 4
+    },
+    "拿不到 DB": {
+      "no_stages_resolved": 1,
+      "import_executed": 1
+    },
+    "新文件": {
+      "import_executed": 1
+    },
+    "规则强制": {
+      "rule_forced_fallback": 1
+    }
+  },
+  "import_execution_subtypes": [
+    {
+      "key": "class/signature import change",
+      "label": "类定义 / 签名变更",
+      "count": 6,
+      "prs": [
+        "18813",
+        "19306",
+        "19748",
+        "19811",
+        "19899",
+        "19935"
+      ]
+    },
+    {
+      "key": "effectful module statement",
+      "label": "有副作用的模块语句",
+      "count": 5,
+      "prs": [
+        "19553",
+        "19643",
+        "19696",
+        "19731",
+        "19885"
+      ]
+    },
+    {
+      "key": "import-time binding consumer",
+      "label": "导入时 binding 消费者",
+      "count": 2,
+      "prs": [
+        "19746",
+        "19801"
+      ]
+    },
+    {
+      "key": "unresolved import replacement",
+      "label": "import 替换无法解析",
+      "count": 2,
+      "prs": [
+        "19583",
+        "19598"
+      ]
+    },
+    {
+      "key": "import target is not a static function",
+      "label": "import 目标不是可静态分析函数",
+      "count": 1,
+      "prs": [
+        "19213"
+      ]
+    },
+    {
+      "key": "ambiguous class/function declaration",
+      "label": "类 / 函数声明有歧义",
+      "count": 1,
+      "prs": [
+        "17476"
+      ]
+    }
+  ]
+}

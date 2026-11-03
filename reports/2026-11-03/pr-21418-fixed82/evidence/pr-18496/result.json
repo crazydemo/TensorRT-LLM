@@ -1,0 +1,322 @@
+{
+  "sample": {
+    "sha": "d3c825800d93a704c0a48caf40576d9fa2f95594",
+    "pr": "18496",
+    "zone": "C3",
+    "old_decision": "\u89c4\u5219\u5f3a\u5236"
+  },
+  "core_python": true,
+  "candidate": {
+    "scope": null,
+    "scopes": [],
+    "affected_stages": [],
+    "reasons": [
+      {
+        "source": "testdef",
+        "blocks": 4,
+        "stages": 19
+      },
+      {
+        "source": "testlist",
+        "blocks": 2,
+        "stages": 15
+      },
+      {
+        "source": "visualgen",
+        "blocks": 0,
+        "stages": 0
+      },
+      {
+        "source": "docs",
+        "blocks": 1,
+        "stages": 3
+      },
+      {
+        "source": "fallback",
+        "reason": "unhandled_files",
+        "files": [
+          "cpp/kernels/fmha_v2/fmha_test.py",
+          "cpp/kernels/fmha_v2/setup.py",
+          "cpp/kernels/fmha_v2/src/fmha/warpspec/compute.h",
+          "cpp/kernels/fmha_v2/src/fmha/warpspec/dma.h",
+          "cpp/kernels/fmha_v2/src/fmha/warpspec/epilogue.h",
+          "cpp/kernels/fmha_v2/src/fmha/warpspec/kernel_traits.h",
+          "cpp/kernels/fmha_v2/src/fused_multihead_attention.cpp",
+          "cpp/kernels/fmha_v2/src/fused_multihead_attention_sage_utils.h",
+          "cpp/tensorrt_llm/common/attentionOp.cpp",
+          "cpp/tensorrt_llm/common/attentionOp.h",
+          "cpp/tensorrt_llm/common/attentionWorkspace.h",
+          "cpp/tensorrt_llm/common/sagePartition.h",
+          "cpp/tensorrt_llm/common/sageQuant.cu",
+          "cpp/tensorrt_llm/common/sageQuant.h",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_64_256_S_q_k_v_128_sage_2_16_1_output_bf16_tma_ws_sm90.cubin.tar.zst",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_64_256_S_qkv_128_sage_64_64_256_output_bf16_tma_ws_sm90.cubin.tar.zst",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_128_sage_64_32_32_output_bf16_sm89.cubin.tar.zst",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_128_sage_64_32_32_output_fp16_sm89.cubin.tar.zst",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_80_sage_64_32_32_output_bf16_sm89.cubin.tar.zst",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_80_sage_64_32_32_output_fp16_sm89.cubin.tar.zst",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fmhaRunner.cpp",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fmhaRunner.h",
+          "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fused_multihead_attention_common.h",
+          "cpp/tensorrt_llm/kernels/fmhaDispatcher.cpp",
+          "cpp/tensorrt_llm/kernels/multiHeadAttentionCommon.h",
+          "cpp/tensorrt_llm/nanobind/thop/bindings.cpp",
+          "cpp/tensorrt_llm/thop/attentionOp.cpp",
+          "cpp/tensorrt_llm/thop/attentionOp.h",
+          "tensorrt_llm/_torch/attention/backends/fmha/fallback.py",
+          "tensorrt_llm/_torch/attention/backends/interface.py"
+        ],
+        "coverage_declined": "coverage tier skipped: a rule forced fallback (scope=null)"
+      }
+    ],
+    "test_db_dir_override": null,
+    "affected_stage_test_counts": {},
+    "affected_stage_split_counts": {},
+    "sanity_required": true,
+    "perfsanity_required": true,
+    "enable_multi_gpu": false,
+    "coverage_dropped_stages": [],
+    "coverage_db_build": null,
+    "coverage_db_commit": null,
+    "coverage_db_lag": null,
+    "coverage_db_base_commit": null,
+    "coverage_db_drift": null,
+    "coverage_db_drift_status": "",
+    "coverage_freshness": "unknown",
+    "coverage_residual_files": [
+      "cpp/kernels/fmha_v2/fmha_test.py",
+      "cpp/kernels/fmha_v2/setup.py",
+      "cpp/kernels/fmha_v2/src/fmha/warpspec/compute.h",
+      "cpp/kernels/fmha_v2/src/fmha/warpspec/dma.h",
+      "cpp/kernels/fmha_v2/src/fmha/warpspec/epilogue.h",
+      "cpp/kernels/fmha_v2/src/fmha/warpspec/kernel_traits.h",
+      "cpp/kernels/fmha_v2/src/fused_multihead_attention.cpp",
+      "cpp/kernels/fmha_v2/src/fused_multihead_attention_sage_utils.h",
+      "cpp/tensorrt_llm/common/attentionOp.cpp",
+      "cpp/tensorrt_llm/common/attentionOp.h",
+      "cpp/tensorrt_llm/common/attentionWorkspace.h",
+      "cpp/tensorrt_llm/common/sagePartition.h",
+      "cpp/tensorrt_llm/common/sageQuant.cu",
+      "cpp/tensorrt_llm/common/sageQuant.h",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_64_256_S_q_k_v_128_sage_2_16_1_output_bf16_tma_ws_sm90.cubin.tar.zst",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_64_256_S_qkv_128_sage_64_64_256_output_bf16_tma_ws_sm90.cubin.tar.zst",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_128_sage_64_32_32_output_bf16_sm89.cubin.tar.zst",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_128_sage_64_32_32_output_fp16_sm89.cubin.tar.zst",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_80_sage_64_32_32_output_bf16_sm89.cubin.tar.zst",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/cubin/fmha_v2_flash_attention_e4m3_fp32_64_32_S_qkv_80_sage_64_32_32_output_fp16_sm89.cubin.tar.zst",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fmhaRunner.cpp",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fmhaRunner.h",
+      "cpp/tensorrt_llm/kernels/contextFusedMultiHeadAttention/fused_multihead_attention_common.h",
+      "cpp/tensorrt_llm/kernels/fmhaDispatcher.cpp",
+      "cpp/tensorrt_llm/kernels/multiHeadAttentionCommon.h",
+      "cpp/tensorrt_llm/nanobind/thop/bindings.cpp",
+      "cpp/tensorrt_llm/thop/attentionOp.cpp",
+      "cpp/tensorrt_llm/thop/attentionOp.h",
+      "tensorrt_llm/_torch/attention/backends/fmha/fallback.py",
+      "tensorrt_llm/_torch/attention/backends/interface.py"
+    ],
+    "coverage_compatibility": "not_attempted",
+    "coverage_decline_reason": "coverage tier skipped: a rule forced fallback (scope=null)",
+    "coverage_decline_category": "rule_forced_fallback",
+    "coverage_no_diff_files": 0
+  },
+  "compatibility": {
+    "status": "not_needed_fallback",
+    "conflicts": []
+  },
+  "eligible_hit": false,
+  "candidate_metrics": {
+    "total": 1255,
+    "kept": 1255,
+    "skipped": 0,
+    "families": {
+      "CPU-Generic-x86": {
+        "total": 173,
+        "kept": 173,
+        "skipped": 0
+      },
+      "A10-PyTorch": {
+        "total": 198,
+        "kept": 198,
+        "skipped": 0
+      },
+      "A30-PyTorch": {
+        "total": 10,
+        "kept": 10,
+        "skipped": 0
+      },
+      "A30-CPP": {
+        "total": 2,
+        "kept": 2,
+        "skipped": 0
+      },
+      "A100X-PyTorch": {
+        "total": 23,
+        "kept": 23,
+        "skipped": 0
+      },
+      "L40S-PyTorch": {
+        "total": 29,
+        "kept": 29,
+        "skipped": 0
+      },
+      "H100_PCIe-PyTorch-Ray": {
+        "total": 25,
+        "kept": 25,
+        "skipped": 0
+      },
+      "H100_PCIe-CPP": {
+        "total": 4,
+        "kept": 4,
+        "skipped": 0
+      },
+      "RTX5090-PyTorch": {
+        "total": 7,
+        "kept": 7,
+        "skipped": 0
+      },
+      "RTX5080-PyTorch": {
+        "total": 7,
+        "kept": 7,
+        "skipped": 0
+      },
+      "H100_PCIe-PyTorch-Perf": {
+        "total": 1,
+        "kept": 1,
+        "skipped": 0
+      },
+      "RTXPro6000D-PyTorch": {
+        "total": 21,
+        "kept": 21,
+        "skipped": 0
+      },
+      "DGX_H100-PyTorch": {
+        "total": 177,
+        "kept": 177,
+        "skipped": 0
+      },
+      "DGX_B200-CPP": {
+        "total": 1,
+        "kept": 1,
+        "skipped": 0
+      },
+      "DGX_B200-PyTorch": {
+        "total": 317,
+        "kept": 317,
+        "skipped": 0
+      },
+      "B300-PyTorch": {
+        "total": 83,
+        "kept": 83,
+        "skipped": 0
+      },
+      "CPU-Generic-arm": {
+        "total": 173,
+        "kept": 173,
+        "skipped": 0
+      },
+      "GB10-PyTorch": {
+        "total": 4,
+        "kept": 4,
+        "skipped": 0
+      }
+    }
+  },
+  "effective_metrics": {
+    "total": 1255,
+    "kept": 1255,
+    "skipped": 0,
+    "families": {
+      "CPU-Generic-x86": {
+        "total": 173,
+        "kept": 173,
+        "skipped": 0
+      },
+      "A10-PyTorch": {
+        "total": 198,
+        "kept": 198,
+        "skipped": 0
+      },
+      "A30-PyTorch": {
+        "total": 10,
+        "kept": 10,
+        "skipped": 0
+      },
+      "A30-CPP": {
+        "total": 2,
+        "kept": 2,
+        "skipped": 0
+      },
+      "A100X-PyTorch": {
+        "total": 23,
+        "kept": 23,
+        "skipped": 0
+      },
+      "L40S-PyTorch": {
+        "total": 29,
+        "kept": 29,
+        "skipped": 0
+      },
+      "H100_PCIe-PyTorch-Ray": {
+        "total": 25,
+        "kept": 25,
+        "skipped": 0
+      },
+      "H100_PCIe-CPP": {
+        "total": 4,
+        "kept": 4,
+        "skipped": 0
+      },
+      "RTX5090-PyTorch": {
+        "total": 7,
+        "kept": 7,
+        "skipped": 0
+      },
+      "RTX5080-PyTorch": {
+        "total": 7,
+        "kept": 7,
+        "skipped": 0
+      },
+      "H100_PCIe-PyTorch-Perf": {
+        "total": 1,
+        "kept": 1,
+        "skipped": 0
+      },
+      "RTXPro6000D-PyTorch": {
+        "total": 21,
+        "kept": 21,
+        "skipped": 0
+      },
+      "DGX_H100-PyTorch": {
+        "total": 177,
+        "kept": 177,
+        "skipped": 0
+      },
+      "DGX_B200-CPP": {
+        "total": 1,
+        "kept": 1,
+        "skipped": 0
+      },
+      "DGX_B200-PyTorch": {
+        "total": 317,
+        "kept": 317,
+        "skipped": 0
+      },
+      "B300-PyTorch": {
+        "total": 83,
+        "kept": 83,
+        "skipped": 0
+      },
+      "CPU-Generic-arm": {
+        "total": 173,
+        "kept": 173,
+        "skipped": 0
+      },
+      "GB10-PyTorch": {
+        "total": 4,
+        "kept": 4,
+        "skipped": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 10,
+      "stages": 24
+    },
+    {
+      "source": "specdec",
+      "blocks": 54,
+      "stages": 71
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "tensorrt_llm/_torch/models/modeling_multimodal_mixin.py",
+        "tensorrt_llm/_torch/models/modeling_qwen2vl.py",
+        "tensorrt_llm/_torch/models/modeling_qwen3vl.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/lora.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/metadata.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/__init__.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/common.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/__init__.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/config.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/runner.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/speculative.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/encoder_decoder.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/no_kv_cache.py",
+        "tensorrt_llm/_torch/pyexecutor/engine/runners/pooling.py",
+        "tensorrt_llm/_torch/pyexecutor/guided_decoder.py",
+        "tensorrt_llm/_torch/pyexecutor/llm_request.py",
+        "tensorrt_llm/_torch/pyexecutor/model_engine.py",
+        "tensorrt_llm/_torch/pyexecutor/py_executor.py",
+        "tensorrt_llm/_torch/route_capture.py"
+      ],
+      "coverage_declined": "coverage tier declined: zero-touch residual file (new/uninstrumented): tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/speculative.py"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "tensorrt_llm/_torch/models/modeling_multimodal_mixin.py",
+    "tensorrt_llm/_torch/models/modeling_qwen2vl.py",
+    "tensorrt_llm/_torch/models/modeling_qwen3vl.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/lora.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/metadata.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/__init__.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/common.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/__init__.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/config.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/runner.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/speculative.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/encoder_decoder.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/no_kv_cache.py",
+    "tensorrt_llm/_torch/pyexecutor/engine/runners/pooling.py",
+    "tensorrt_llm/_torch/pyexecutor/guided_decoder.py",
+    "tensorrt_llm/_torch/pyexecutor/llm_request.py",
+    "tensorrt_llm/_torch/pyexecutor/model_engine.py",
+    "tensorrt_llm/_torch/pyexecutor/py_executor.py",
+    "tensorrt_llm/_torch/route_capture.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: zero-touch residual file (new/uninstrumented): tensorrt_llm/_torch/pyexecutor/engine/runners/decoder/speculative.py",
+  "coverage_decline_category": "zero_touch",
+  "coverage_no_diff_files": 0
+}

@@ -1,0 +1,67 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "waives",
+      "blocks": 5,
+      "stages": 16
+    },
+    {
+      "source": "testdef",
+      "blocks": 51,
+      "stages": 86
+    },
+    {
+      "source": "testlist",
+      "blocks": 12,
+      "stages": 34
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "outofscope",
+      "blocks": 0,
+      "stages": 0
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "tests/integration/defs/conftest.py",
+        "tests/integration/defs/stress_test/stress_test.py",
+        "tests/integration/defs/triton_server/conftest.py",
+        "tests/test_common/llm_data.py"
+      ],
+      "coverage_declined": "coverage tier declined: zero-touch residual file (new/uninstrumented): tests/integration/defs/stress_test/stress_test.py"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "tests/integration/defs/conftest.py",
+    "tests/integration/defs/stress_test/stress_test.py",
+    "tests/integration/defs/triton_server/conftest.py",
+    "tests/test_common/llm_data.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: zero-touch residual file (new/uninstrumented): tests/integration/defs/stress_test/stress_test.py",
+  "coverage_decline_category": "zero_touch",
+  "coverage_no_diff_files": 0
+}

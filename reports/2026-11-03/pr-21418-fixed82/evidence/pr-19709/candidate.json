@@ -1,0 +1,46 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 5,
+      "stages": 22
+    },
+    {
+      "source": "testlist",
+      "blocks": 2,
+      "stages": 11
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "3rdparty/patches/msa_strided_paged_kv.patch"
+      ],
+      "coverage_declined": "coverage tier declined: non-Python residual file: 3rdparty/patches/msa_strided_paged_kv.patch"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "3rdparty/patches/msa_strided_paged_kv.patch"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: non-Python residual file: 3rdparty/patches/msa_strided_paged_kv.patch",
+  "coverage_decline_category": "non_python",
+  "coverage_no_diff_files": 0
+}

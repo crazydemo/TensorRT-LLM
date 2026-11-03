@@ -1,0 +1,42 @@
+{
+  "scope": "waiveonly",
+  "scopes": [
+    "waiveonly"
+  ],
+  "affected_stages": [
+    "CPU-Generic-arm-1",
+    "CPU-Generic-x86-1"
+  ],
+  "reasons": [
+    {
+      "source": "waives",
+      "blocks": 1,
+      "stages": 2
+    }
+  ],
+  "test_db_dir_override": "cbts_test_db",
+  "affected_stage_test_counts": {
+    "CPU-Generic-x86-1": 1,
+    "CPU-Generic-arm-1": 1
+  },
+  "affected_stage_split_counts": {
+    "CPU-Generic-x86-1": 1,
+    "CPU-Generic-arm-1": 1
+  },
+  "sanity_required": false,
+  "perfsanity_required": false,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "",
+  "coverage_residual_files": [],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "",
+  "coverage_decline_category": "",
+  "coverage_no_diff_files": 0
+}

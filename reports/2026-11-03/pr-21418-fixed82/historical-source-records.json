@@ -1,0 +1,1341 @@
+{
+  "type": "historical_report_vs_latest_policy_and_latest_coverage",
+  "controlled_policy_only_comparison": false,
+  "reason": "User explicitly requested latest coverage; historical DB build 3010 unavailable and current reader requires schema 5.",
+  "fixed_cohort": 83,
+  "matched_historical_decisions": 82,
+  "old": {
+    "tier1": 23,
+    "tier2_shadow": 3,
+    "known_candidate_hits": 26,
+    "known_denominator": 82,
+    "matched_hit_rate": 0.3170731707317073
+  },
+  "new_matched": {
+    "hits": 30,
+    "denominator": 82
+  },
+  "gains": [
+    "19585",
+    "18636",
+    "19901",
+    "19791"
+  ],
+  "regressions": [],
+  "previously_missing": [
+    "19958"
+  ],
+  "decisions": [
+    {
+      "sample": {
+        "sha": "b5a0afd6b85d98fb84a33f17a607bd445c487ec3",
+        "pr": "19679",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "40eb9cb079b23e07e1e2dc80d1b342b0223dddeb",
+        "pr": "19589",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "ce2e2f8b7023f385711c2395ac83e046fbcbea84",
+        "pr": "19821",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "58fd2d3fc854cb93a04b8286bd1c1c31c0252b1f",
+        "pr": "19600",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "edc41150e6bd51095b207efa2c4a4eeee7b6ce63",
+        "pr": "19957",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "b90ff2158e710ba9a94cb4bf07faaaaba4bdd9b3",
+        "pr": "19409",
+        "zone": "A",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "481e98eb4f0f47af8a99069128ecef35f43fa970",
+        "pr": "19539",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "687af96ddb135b7e22bccc4a882e3ad80a635239",
+        "pr": "18677",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "0970204df7e6b91790c0dfaf7eb986d4b5f9c4a3",
+        "pr": "19603",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "db359c23ccc5ee7a4e3aebd3cd30c379950d6529",
+        "pr": "19359",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "bba2b1763589d5d2e81dbd0cc30ae4a5f82690e8",
+        "pr": "18802",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "cb03225c137d3d7c07c0dd664ad9d62b81f04c3e",
+        "pr": "19709",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "dc6f88de69ce869dc0ce095c888a70705a8b663c",
+        "pr": "19431",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "2ef828c4c982a4530e2e593c7b771627ee0c6dde",
+        "pr": "19445",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "82f980469fabc288891314a61348b076d9f5388c",
+        "pr": "19552",
+        "zone": "A",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "34fcc38aac0986510b89dfe3b122bf5fe7c7379c",
+        "pr": "19790",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "fbbeac32651f24835c18ce8e4d6523b34d73b69d",
+        "pr": "19895",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "5f229bf9cadd9a6d01dea7f66c39c19525796127",
+        "pr": "20019",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "a82b8a4dd42dae7b3de3faf8f2c63e79343c4717",
+        "pr": "20009",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "cc63e66daf52644f1441e117bb7ba67d20566016",
+        "pr": "19958",
+        "zone": "B",
+        "old_decision": "无记录"
+      },
+      "old_hit": null,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "45c7060ab1392e18d072f8b90a40cc705ff264f3",
+        "pr": "19930",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "5f1b2490ccdef7fa87486718c50cbecb7978e0a6",
+        "pr": "19766",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "aa8a4523abd942e8ca1158abecf0dd589bc6d7d7",
+        "pr": "19918",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "a1f562a696b5da6f03079cc67760356ae936d57a",
+        "pr": "19858",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "0e8843eedebf9cda2f37ed18af07ae400ca78c03",
+        "pr": "19931",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "a40d97aa57446ad014f4be5c8d857502bd8fce36",
+        "pr": "19260",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "f7e671a1f2730001df063e8bdd4391a1c165e5e8",
+        "pr": "19754",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "5cf80d611fbfa3f3de9033e4b200f96fff12a5aa",
+        "pr": "19697",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "47c6487fe2200748113fd62c9dbe575e27201dfd",
+        "pr": "19637",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "dc31d8ddef9e0c789d2490f1a98a2ee6222f9905",
+        "pr": "19701",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "bf414e37291b9d15a5328af99e349db8dedf7a4d",
+        "pr": "19661",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "4ea5b0c7fd9ccc874241d2f1e4f9fa648ce81f62",
+        "pr": "19237",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "2914df8aa6e2d936b4d7fb767521bad52c968bea",
+        "pr": "19663",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "d3c788b0869b4021f0f3f41f1e0d0f35e210e2a2",
+        "pr": "19500",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "147f70f9c15cd7071468d285e21668cfe8ef4c20",
+        "pr": "19588",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "61332ba9f645289e30e300087aa5dafeea8db4a6",
+        "pr": "19891",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "92d23a83799d43bd734db751786aa64e198e5c2c",
+        "pr": "19506",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "aa026bf86db4004cb5e4604f18955537f3e320ce",
+        "pr": "19657",
+        "zone": "B",
+        "old_decision": "规则收窄"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "not_needed_tier1",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "ec357dd9e49f34b6b34af9f9e7202b3e75d5ce2f",
+        "pr": "19585",
+        "zone": "C1",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "clean",
+        "conflicts": [],
+        "residual_conflicts": [],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "535c3e08b6b363c29246d58755ff117fd65a9b94"
+      }
+    },
+    {
+      "sample": {
+        "sha": "f891b3d9bae1d8d1e6b3023e46f3b5dd3a2fe7b5",
+        "pr": "19829",
+        "zone": "C1",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "089d586d83dbb125dad5bece6d286069221c5547",
+        "pr": "19830",
+        "zone": "C1",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "72688933d5fe3b24a7dd4a315722d102a33f3c54",
+        "pr": "19810",
+        "zone": "C1",
+        "old_decision": "拿不到 DB"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "0f4c99e739ac4eb05722a695a9a0d8648f3d4e6e",
+        "pr": "19226",
+        "zone": "C1",
+        "old_decision": "Tier 2 收窄(shadow)"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "clean",
+        "conflicts": [
+          "tests/unittest/llmapi/apps/test_tool_parsers.py"
+        ],
+        "residual_conflicts": [],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "446e8d92361059cfb32566462eab179fd5305939"
+      }
+    },
+    {
+      "sample": {
+        "sha": "602c90be1c8677fb4d56b8a4cd74028a89ca41f3",
+        "pr": "19758",
+        "zone": "C1",
+        "old_decision": "Tier 2 收窄(shadow)"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "clean",
+        "conflicts": [],
+        "residual_conflicts": [],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "b9dd9b96307225b24fbe880bc1c55366e73179b4"
+      }
+    },
+    {
+      "sample": {
+        "sha": "ff94288d99c7237aca5d49ab7f7165aaf07b8b53",
+        "pr": "19935",
+        "zone": "C2",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "dcdd9576b421f9c629ef0622a54b9e2e6a094e01",
+        "pr": "19178",
+        "zone": "C2",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "ac3ec509195eda8d37026287c1f282b2a9cb2fce",
+        "pr": "19825",
+        "zone": "C2",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "cf5dc9f970e10751f0d8e5d4daa91b50d95f86bb",
+        "pr": "19770",
+        "zone": "C2",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "8f973fbe7dd174d0783dc04376635a0ddb2f01fc",
+        "pr": "19873",
+        "zone": "C3",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "b2d9ec3be04069e4e558ac9227e56de6b1de157a",
+        "pr": "19748",
+        "zone": "C3",
+        "old_decision": "DB 补丁冲突"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "1ab9f5525e4a7b0f1271fe2c5fd01a4dac7cc7c8",
+        "pr": "19643",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "af645b780699206e532af3ab21bfe1745e3e2b49",
+        "pr": "19213",
+        "zone": "C3",
+        "old_decision": "新文件"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "b57220da7b7a0757359ad769a304a0abcac85836",
+        "pr": "19899",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "8780061e79017d825bac34d0cadb2b27b3a1d8e0",
+        "pr": "18636",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "clean",
+        "conflicts": [],
+        "residual_conflicts": [],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "bba2b1763589d5d2e81dbd0cc30ae4a5f82690e8"
+      }
+    },
+    {
+      "sample": {
+        "sha": "d27e97f6dece43028c40fb602cb77bb5ab28132d",
+        "pr": "19768",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": true,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "conflict",
+        "conflicts": [
+          "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/msa_backend.py"
+        ],
+        "residual_conflicts": [
+          "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/msa_backend.py"
+        ],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "276cc12ff547ee46aff808e0b2f1d1fdc5674639"
+      }
+    },
+    {
+      "sample": {
+        "sha": "ef1b238cfffc071782d2b2bbc7100b22dedbf01e",
+        "pr": "19869",
+        "zone": "C3",
+        "old_decision": "Tier 2 收窄(shadow)"
+      },
+      "old_hit": true,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "clean",
+        "conflicts": [],
+        "residual_conflicts": [],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "7329182abeee0d226c5b5d9f7eab6150aff54ded"
+      }
+    },
+    {
+      "sample": {
+        "sha": "2681ed10c9cc5f2ea389c9d439e3966328c0c316",
+        "pr": "19896",
+        "zone": "C3",
+        "old_decision": "DB 补丁冲突"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "b3be283b978f15ba29984bf3c26936e59fd60f46",
+        "pr": "19696",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "7efa053a8908ea84f4d000cea02024d2ac564ffb",
+        "pr": "19744",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": true,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "conflict",
+        "conflicts": [
+          "tensorrt_llm/_torch/pyexecutor/_util.py",
+          "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+          "tests/unittest/_torch/pyexecutor/kv_cache/test_kv_cache_budget_split.py"
+        ],
+        "residual_conflicts": [
+          "tensorrt_llm/_torch/pyexecutor/_util.py",
+          "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py"
+        ],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "2914df8aa6e2d936b4d7fb767521bad52c968bea"
+      }
+    },
+    {
+      "sample": {
+        "sha": "d2487301cac3e433c35facef2d4521e77a603042",
+        "pr": "19801",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "7329182abeee0d226c5b5d9f7eab6150aff54ded",
+        "pr": "19306",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "348192ae71f465f5ca95097d42cad3a14459b4c3",
+        "pr": "19746",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "807a036f064038d8d0fe1bdf64bbac579d648be1",
+        "pr": "19885",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "e0d1e933c75d6b884b8f7f92c64e9a9a262c8404",
+        "pr": "19731",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "2e2a3cb925ee6c6da40bbecf91dd50f4d1d5f09b",
+        "pr": "19892",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "6603d00dc2db8931e5ca0da34c03a3f5923cbe16",
+        "pr": "19613",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": true,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "conflict",
+        "conflicts": [
+          "tensorrt_llm/_torch/models/modeling_minimaxm3_vl.py",
+          "tensorrt_llm/inputs/registry.py"
+        ],
+        "residual_conflicts": [
+          "tensorrt_llm/_torch/models/modeling_minimaxm3_vl.py",
+          "tensorrt_llm/inputs/registry.py"
+        ],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "61332ba9f645289e30e300087aa5dafeea8db4a6"
+      }
+    },
+    {
+      "sample": {
+        "sha": "276cc12ff547ee46aff808e0b2f1d1fdc5674639",
+        "pr": "19811",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "4a36c5b2fb1c8f8ff59c1fb1ebef0ed3b385936e",
+        "pr": "19901",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "clean",
+        "conflicts": [],
+        "residual_conflicts": [],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "a1f562a696b5da6f03079cc67760356ae936d57a"
+      }
+    },
+    {
+      "sample": {
+        "sha": "d3c825800d93a704c0a48caf40576d9fa2f95594",
+        "pr": "18496",
+        "zone": "C3",
+        "old_decision": "规则强制"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "3beeef3a5f39bb42d9d2c3c45a9c5e2565e5a3d4",
+        "pr": "18485",
+        "zone": "C3",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "535c3e08b6b363c29246d58755ff117fd65a9b94",
+        "pr": "19749",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": true,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "conflict",
+        "conflicts": [
+          "tensorrt_llm/_torch/moe/fused_moe/configurable_moe.py",
+          "tensorrt_llm/_torch/moe/fused_moe/create_moe.py",
+          "tensorrt_llm/_torch/moe/fused_moe/impl_blocks.py",
+          "tensorrt_llm/_torch/moe/fused_moe/moe_op_backend.py",
+          "tests/unittest/_torch/moe/test_moe_backend.py"
+        ],
+        "residual_conflicts": [
+          "tensorrt_llm/_torch/moe/fused_moe/configurable_moe.py",
+          "tensorrt_llm/_torch/moe/fused_moe/create_moe.py",
+          "tensorrt_llm/_torch/moe/fused_moe/impl_blocks.py",
+          "tensorrt_llm/_torch/moe/fused_moe/moe_op_backend.py"
+        ],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "edc41150e6bd51095b207efa2c4a4eeee7b6ce63"
+      }
+    },
+    {
+      "sample": {
+        "sha": "b8af588782192366e396ba8f1878c41a36587594",
+        "pr": "19553",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "70193ec43b48d4edac734829d9f257c02ed12b14",
+        "pr": "19583",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "46473dcfb79defad5aebe74e7fdc367b5e00fd58",
+        "pr": "19598",
+        "zone": "C3",
+        "old_decision": "拿不到 DB"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "78dac6256b82eeffc06cd5ef9bfe6571dffaa5b9",
+        "pr": "18813",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "2b2c5be2dc092fcfb4deed5459bce91626be4838",
+        "pr": "17306",
+        "zone": "C3",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "bcaf5e6c97a8b116b33457630655601206cb10a2",
+        "pr": "19183",
+        "zone": "C3",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "b031dbe6f0108f5a7bf02b7bcf74a1b113d813e1",
+        "pr": "19791",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": true,
+      "new_after_compatibility": true,
+      "compatibility": {
+        "status": "clean",
+        "conflicts": [
+          "tests/unittest/_torch/pyexecutor/test_multimodal_embedding_lengths.py"
+        ],
+        "residual_conflicts": [],
+        "method": "git merge-tree with synthetic PR tree parented at sample parent; identical three-way inputs to cherry-pick",
+        "base": "8f973fbe7dd174d0783dc04376635a0ddb2f01fc"
+      }
+    },
+    {
+      "sample": {
+        "sha": "ace058d1f5f176673f221069baef971cfc891f90",
+        "pr": "17476",
+        "zone": "C3",
+        "old_decision": "import 期代码挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_fallback",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "dc56f5ccb2e14cc242dccd7078e69883856c9442",
+        "pr": "19872",
+        "zone": "C3",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "e5a9341138921783ba79f061a6d567c487f3cfef",
+        "pr": "19484",
+        "zone": "C3",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "ce436a9b4ebc6892b7dbf4c5a3a6d5c5d60bc485",
+        "pr": "17067",
+        "zone": "C3",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    },
+    {
+      "sample": {
+        "sha": "446e8d92361059cfb32566462eab179fd5305939",
+        "pr": "19622",
+        "zone": "C3",
+        "old_decision": "preflight 挡住"
+      },
+      "old_hit": false,
+      "new_candidate": false,
+      "new_after_compatibility": false,
+      "compatibility": {
+        "status": "not_needed_preflight",
+        "conflicts": []
+      }
+    }
+  ],
+  "matched_gain_percentage_points": 4.878048780487804
+}

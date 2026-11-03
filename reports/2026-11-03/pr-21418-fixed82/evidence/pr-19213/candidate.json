@@ -1,0 +1,50 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 37,
+      "stages": 75
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/cache_manager.py",
+        "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+        "tensorrt_llm/tools/layer_wise_benchmarks/runner.py"
+      ],
+      "coverage_declined": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/cache_manager.py::<module> (import target is not a static function: tensorrt_llm/runtime/kv_cache_manager_v2/__init__.py::BatchDesc)"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/cache_manager.py",
+    "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+    "tensorrt_llm/tools/layer_wise_benchmarks/runner.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/cache_manager.py::<module> (import target is not a static function: tensorrt_llm/runtime/kv_cache_manager_v2/__init__.py::BatchDesc)",
+  "coverage_decline_category": "import_executed",
+  "coverage_no_diff_files": 0
+}

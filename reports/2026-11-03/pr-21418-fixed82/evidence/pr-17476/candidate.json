@@ -1,0 +1,62 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 4,
+      "stages": 13
+    },
+    {
+      "source": "testlist",
+      "blocks": 2,
+      "stages": 11
+    },
+    {
+      "source": "visualgen",
+      "blocks": 21,
+      "stages": 48
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "tensorrt_llm/_torch/custom_ops/torch_custom_ops.py",
+        "tensorrt_llm/_torch/modules/gated_mlp.py",
+        "tensorrt_llm/_torch/modules/linear.py",
+        "tensorrt_llm/_torch/modules/swiglu.py"
+      ],
+      "coverage_declined": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/custom_ops/torch_custom_ops.py::<module> (ambiguous class/function declaration)"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "tensorrt_llm/_torch/custom_ops/torch_custom_ops.py",
+    "tensorrt_llm/_torch/modules/gated_mlp.py",
+    "tensorrt_llm/_torch/modules/linear.py",
+    "tensorrt_llm/_torch/modules/swiglu.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/custom_ops/torch_custom_ops.py::<module> (ambiguous class/function declaration)",
+  "coverage_decline_category": "import_executed",
+  "coverage_no_diff_files": 0
+}

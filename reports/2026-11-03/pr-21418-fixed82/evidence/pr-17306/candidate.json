@@ -1,0 +1,83 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 13,
+      "stages": 37
+    },
+    {
+      "source": "testlist",
+      "blocks": 1,
+      "stages": 1
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.cpp",
+        "cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.h",
+        "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/config.h",
+        "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCache.cpp",
+        "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCache.h",
+        "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCacheManager.cpp",
+        "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCacheManager.h",
+        "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/page.cpp",
+        "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/storageManager.cpp",
+        "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/storageManager.h",
+        "cpp/tensorrt_llm/nanobind/batch_manager/kvCacheManagerV2.cpp",
+        "cpp/tensorrt_llm/nanobind/batch_manager/kvCacheManagerV2Utils.cpp",
+        "tensorrt_llm/_torch/pyexecutor/_util.py",
+        "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+        "tensorrt_llm/_torch/pyexecutor/py_executor.py",
+        "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.py",
+        "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.pyi"
+      ],
+      "coverage_declined": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.cpp"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.cpp",
+    "cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.h",
+    "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/config.h",
+    "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCache.cpp",
+    "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCache.h",
+    "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCacheManager.cpp",
+    "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/kvCacheManager.h",
+    "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/page.cpp",
+    "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/storageManager.cpp",
+    "cpp/tensorrt_llm/batch_manager/kv_cache_manager_v2/storageManager.h",
+    "cpp/tensorrt_llm/nanobind/batch_manager/kvCacheManagerV2.cpp",
+    "cpp/tensorrt_llm/nanobind/batch_manager/kvCacheManagerV2Utils.cpp",
+    "tensorrt_llm/_torch/pyexecutor/_util.py",
+    "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py",
+    "tensorrt_llm/_torch/pyexecutor/py_executor.py",
+    "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.py",
+    "tensorrt_llm/runtime/kv_cache_manager_v2/__init__.pyi"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/batch_manager/kvCacheManagerV2Utils.cpp",
+  "coverage_decline_category": "non_python",
+  "coverage_no_diff_files": 0
+}

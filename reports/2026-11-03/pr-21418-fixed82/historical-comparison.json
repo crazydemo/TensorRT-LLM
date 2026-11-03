@@ -1,0 +1,87 @@
+{
+  "baseline": "original_26_of_82_recorded_report",
+  "historical_recorded_hits": 26,
+  "denominator": 82,
+  "historical_recorded_rate": 0.3170731707317073,
+  "historical_tier1": 23,
+  "historical_tier2_shadow": 3,
+  "current_candidate_hits": 34,
+  "current_candidate_rate": 0.4146341463414634,
+  "current_compatible_hits": 30,
+  "current_compatible_rate": 0.36585365853658536,
+  "recorded_to_current_compatible_gain_percentage_points": 4.878048780487805,
+  "gained_compatible_prs": [
+    "19585",
+    "18636",
+    "19901",
+    "19791"
+  ],
+  "lost_recorded_hit_prs": [],
+  "same_cohort_commits": true,
+  "controlled_policy_only_comparison": false,
+  "boundary": "Original records include 23 Tier-1 decisions and 3 Tier-2 shadow decisions. Historical coverage was not reused and the old policy was not replayed with the current compatibility gate. The difference combines policy, coverage and evaluation changes; it is not an isolated gain from PR #21418.",
+  "current_coverage_build": 3049,
+  "gains": [
+    {
+      "pr": "19585",
+      "sha": "ec357dd9e49f34b6b34af9f9e7202b3e75d5ce2f",
+      "title": "移除过时 TensorRT telemetry 兼容路径",
+      "historical_reason": "preflight 挡住",
+      "current_scope": "coverage",
+      "compatibility": "clean",
+      "residual_files": [
+        "tensorrt_llm/usage/usage_lib.py"
+      ],
+      "impacted": 8,
+      "untrusted": 240,
+      "skipped_entries": 312,
+      "total_entries": 1256
+    },
+    {
+      "pr": "18636",
+      "sha": "8780061e79017d825bac34d0cadb2b27b3a1d8e0",
+      "title": "多模态 fusion 使用 index copy",
+      "historical_reason": "import 期代码挡住",
+      "current_scope": "coverage",
+      "compatibility": "clean",
+      "residual_files": [
+        "tensorrt_llm/_torch/models/modeling_multimodal_utils.py"
+      ],
+      "impacted": 28,
+      "untrusted": 237,
+      "skipped_entries": 295,
+      "total_entries": 1253
+    },
+    {
+      "pr": "19901",
+      "sha": "4a36c5b2fb1c8f8ff59c1fb1ebef0ed3b385936e",
+      "title": "缓存 MegaMoE kernel descriptor",
+      "historical_reason": "import 期代码挡住",
+      "current_scope": "coverage",
+      "compatibility": "clean",
+      "residual_files": [
+        "tensorrt_llm/_torch/moe/custom_ops/cute_dsl_megamoe_custom_op.py"
+      ],
+      "impacted": 1259,
+      "untrusted": 63,
+      "skipped_entries": 21,
+      "total_entries": 1253
+    },
+    {
+      "pr": "19791",
+      "sha": "b031dbe6f0108f5a7bf02b7bcf74a1b113d813e1",
+      "title": "跳过未使用的多模态 encoder IPC handle",
+      "historical_reason": "import 期代码挡住",
+      "current_scope": "coverage",
+      "compatibility": "clean",
+      "residual_files": [
+        "tensorrt_llm/_torch/pyexecutor/_util.py",
+        "tensorrt_llm/_torch/pyexecutor/sampler/sampler.py"
+      ],
+      "impacted": 389,
+      "untrusted": 176,
+      "skipped_entries": 142,
+      "total_entries": 1254
+    }
+  ]
+}

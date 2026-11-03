@@ -1,0 +1,74 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 6,
+      "stages": 23
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "cpp/tensorrt_llm/kernels/IndexerTopK.h",
+        "cpp/tensorrt_llm/kernels/compressorKernels/compressorKernels.cu",
+        "cpp/tensorrt_llm/kernels/compressorKernels/compressorKernels.h",
+        "cpp/tensorrt_llm/kernels/indexerTopK.cu",
+        "cpp/tensorrt_llm/thop/IndexerTopKOp.cpp",
+        "cpp/tensorrt_llm/thop/compressorOp.cpp",
+        "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/compressor.py",
+        "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/metadata.py",
+        "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/module.py",
+        "tensorrt_llm/_torch/attention/backends/sparse/dsa/indexer.py",
+        "tensorrt_llm/_torch/attention/backends/sparse/dsa/metadata.py",
+        "tensorrt_llm/_torch/attention/backends/trtllm.py",
+        "tensorrt_llm/_torch/attention/mla.py",
+        "tensorrt_llm/_torch/custom_ops/cpp_custom_ops.py",
+        "tensorrt_llm/_torch/modules/top_k.py"
+      ],
+      "coverage_declined": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/kernels/IndexerTopK.h"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "cpp/tensorrt_llm/kernels/IndexerTopK.h",
+    "cpp/tensorrt_llm/kernels/compressorKernels/compressorKernels.cu",
+    "cpp/tensorrt_llm/kernels/compressorKernels/compressorKernels.h",
+    "cpp/tensorrt_llm/kernels/indexerTopK.cu",
+    "cpp/tensorrt_llm/thop/IndexerTopKOp.cpp",
+    "cpp/tensorrt_llm/thop/compressorOp.cpp",
+    "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/compressor.py",
+    "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/metadata.py",
+    "tensorrt_llm/_torch/attention/backends/sparse/deepseek_v4/module.py",
+    "tensorrt_llm/_torch/attention/backends/sparse/dsa/indexer.py",
+    "tensorrt_llm/_torch/attention/backends/sparse/dsa/metadata.py",
+    "tensorrt_llm/_torch/attention/backends/trtllm.py",
+    "tensorrt_llm/_torch/attention/mla.py",
+    "tensorrt_llm/_torch/custom_ops/cpp_custom_ops.py",
+    "tensorrt_llm/_torch/modules/top_k.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/kernels/IndexerTopK.h",
+  "coverage_decline_category": "non_python",
+  "coverage_no_diff_files": 0
+}

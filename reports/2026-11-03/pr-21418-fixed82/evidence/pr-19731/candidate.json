@@ -1,0 +1,59 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 3,
+      "stages": 11
+    },
+    {
+      "source": "specdec",
+      "blocks": 54,
+      "stages": 71
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/cache_manager.py",
+        "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/kernels/msa_scatter.py",
+        "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/kernels/trtllm_gen_dense_decode.py",
+        "tensorrt_llm/_torch/models/modeling_minimaxm3.py",
+        "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py"
+      ],
+      "coverage_declined": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/cache_manager.py::<module> (effectful module statement)"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/cache_manager.py",
+    "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/kernels/msa_scatter.py",
+    "tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/kernels/trtllm_gen_dense_decode.py",
+    "tensorrt_llm/_torch/models/modeling_minimaxm3.py",
+    "tensorrt_llm/_torch/pyexecutor/kv_cache/kv_cache_manager_v2.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: import-executed change, no sound bound: tensorrt_llm/_torch/attention/backends/sparse/minimax_m3/cache_manager.py::<module> (effectful module statement)",
+  "coverage_decline_category": "import_executed",
+  "coverage_no_diff_files": 0
+}

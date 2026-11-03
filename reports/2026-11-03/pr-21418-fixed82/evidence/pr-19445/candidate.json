@@ -1,0 +1,50 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "cpp/tensorrt_llm/CMakeLists.txt",
+        "cpp/tensorrt_llm/batch_manager/CMakeLists.txt",
+        "cpp/tensorrt_llm/executor/CMakeLists.txt",
+        "cpp/tensorrt_llm/kernels/cutlass_kernels/CMakeLists.txt",
+        "cpp/tensorrt_llm/nanobind/CMakeLists.txt",
+        "cpp/tensorrt_llm/runtime/CMakeLists.txt",
+        "cpp/tensorrt_llm/thop/CMakeLists.txt",
+        "cpp/tensorrt_llm/thop/moe/CMakeLists.txt"
+      ],
+      "coverage_declined": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/CMakeLists.txt"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "cpp/tensorrt_llm/CMakeLists.txt",
+    "cpp/tensorrt_llm/batch_manager/CMakeLists.txt",
+    "cpp/tensorrt_llm/executor/CMakeLists.txt",
+    "cpp/tensorrt_llm/kernels/cutlass_kernels/CMakeLists.txt",
+    "cpp/tensorrt_llm/nanobind/CMakeLists.txt",
+    "cpp/tensorrt_llm/runtime/CMakeLists.txt",
+    "cpp/tensorrt_llm/thop/CMakeLists.txt",
+    "cpp/tensorrt_llm/thop/moe/CMakeLists.txt"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/CMakeLists.txt",
+  "coverage_decline_category": "non_python",
+  "coverage_no_diff_files": 0
+}

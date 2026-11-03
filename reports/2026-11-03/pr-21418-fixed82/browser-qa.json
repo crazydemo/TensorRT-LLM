@@ -1,0 +1,18 @@
+{
+  "cases": 82,
+  "search": true,
+  "expand": true,
+  "candidate_filter": 34,
+  "conflict_filter": 4,
+  "core_hit_filter": 13,
+  "sort": true,
+  "mobile_overflow": false,
+  "browser_errors": 0,
+  "fallback_filters": {
+    "non_python": 22,
+    "import_executed": 17,
+    "zero_touch_shortcut": 4,
+    "intersection": 0,
+    "reset": 82
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "build": 3049,
+  "commit": "0fd58c90ede974e01ecc53627ad5a9bc76846703",
+  "urls": [
+    "https://urm.nvidia.com/artifactory/sw-tensorrt-generic/llm-artifacts/LLM/main/L0_PostMerge/3049/cbts-coverage/cbts_pystart_report_x86_64.tar.gz",
+    "https://urm.nvidia.com/artifactory/sw-tensorrt-generic/llm-artifacts/LLM/main/L0_PostMerge/3049/cbts-coverage/cbts_pystart_report_SBSA.tar.gz"
+  ],
+  "latest_probed_build": 3049,
+  "revision_source": "https://prod.blsm.nvidia.com/sw-tensorrt-top-1/job/LLM/job/main/job/L0_PostMerge/3049/api/json?tree=actions[remoteUrls,lastBuiltRevision[SHA1]]",
+  "revision_note": "Jenkins tekit mirror checkout; corroborated by console Target branch TOT commit",
+  "merged_db_sha256": "e60b0816dfdd4c32344392c74445c6f92f631b641f0b8ab12474d832757f686a"
+}

@@ -1,0 +1,46 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 1,
+      "stages": 2
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "tests/test_common/magic_import_hooks.py"
+      ],
+      "coverage_declined": "coverage tier declined: shared test infrastructure change: tests/test_common/magic_import_hooks.py::pytest_sessionfinish (pytest session/collection hook)"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "tests/test_common/magic_import_hooks.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: shared test infrastructure change: tests/test_common/magic_import_hooks.py::pytest_sessionfinish (pytest session/collection hook)",
+  "coverage_decline_category": "shared_test_infrastructure",
+  "coverage_no_diff_files": 0
+}

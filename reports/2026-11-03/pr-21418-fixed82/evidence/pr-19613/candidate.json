@@ -1,0 +1,89 @@
+{
+  "scope": "coverage",
+  "scopes": [
+    "coverage"
+  ],
+  "affected_stages": [
+    "A10-PyTorch-1",
+    "A10-PyTorch-2",
+    "A10-PyTorch-3",
+    "A100X-PyTorch-1",
+    "A30-CPP-1",
+    "A30-PyTorch-1",
+    "A30-PyTorch-2",
+    "B300-PyTorch-1",
+    "B300-PyTorch-2",
+    "CPU-Generic-arm-1",
+    "CPU-Generic-x86-1",
+    "DGX_B200-CPP-1",
+    "DGX_B200-PyTorch-1",
+    "DGX_B200-PyTorch-2",
+    "DGX_B200-PyTorch-3",
+    "DGX_B200-PyTorch-4",
+    "DGX_B200-PyTorch-5",
+    "DGX_B200-PyTorch-6",
+    "DGX_B200-PyTorch-7",
+    "DGX_B200-PyTorch-8",
+    "DGX_B200-PyTorch-9",
+    "DGX_H100-PyTorch-1",
+    "DGX_H100-PyTorch-2",
+    "DGX_H100-PyTorch-3",
+    "DGX_H100-PyTorch-4",
+    "DGX_H100-PyTorch-5",
+    "DGX_H100-PyTorch-6",
+    "GB10-PyTorch-1",
+    "H100_PCIe-CPP-1",
+    "H100_PCIe-PyTorch-Perf-1",
+    "H100_PCIe-PyTorch-Ray-1",
+    "L40S-PyTorch-1",
+    "L40S-PyTorch-2",
+    "RTX5080-PyTorch-1",
+    "RTX5080-PyTorch-2",
+    "RTX5090-PyTorch-1",
+    "RTXPro6000D-PyTorch-1"
+  ],
+  "reasons": [
+    {
+      "source": "coverage",
+      "files": 2,
+      "impacted": 1295,
+      "untrusted": 61,
+      "removed_cases": 17,
+      "dropped_stages": 0,
+      "outcome": "narrowed",
+      "no_data_policy": "file",
+      "no_diff_files": 0,
+      "narrowed_stages": 9
+    }
+  ],
+  "test_db_dir_override": "cbts_test_db",
+  "affected_stage_test_counts": {
+    "A10-PyTorch-1": 193,
+    "A10-PyTorch-3": 193,
+    "A10-PyTorch-2": 193
+  },
+  "affected_stage_split_counts": {
+    "A10-PyTorch-1": 2,
+    "A10-PyTorch-3": 2,
+    "A10-PyTorch-2": 2
+  },
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": true,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "tensorrt_llm/_torch/models/modeling_minimaxm3_vl.py",
+    "tensorrt_llm/inputs/registry.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "",
+  "coverage_decline_category": "",
+  "coverage_no_diff_files": 0
+}

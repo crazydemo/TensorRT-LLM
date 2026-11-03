@@ -1,0 +1,74 @@
+{
+  "scope": null,
+  "scopes": [],
+  "affected_stages": [],
+  "reasons": [
+    {
+      "source": "testdef",
+      "blocks": 7,
+      "stages": 20
+    },
+    {
+      "source": "docs",
+      "blocks": 1,
+      "stages": 3
+    },
+    {
+      "source": "fallback",
+      "reason": "unhandled_files",
+      "files": [
+        "cpp/tensorrt_llm/thop/moe/communication/moeAlltoAllOp.cpp",
+        "tensorrt_llm/_torch/custom_ops/torch_custom_ops.py",
+        "tensorrt_llm/_torch/cute_dsl_kernels/rubin/moe/manual_mma_128dp.py",
+        "tensorrt_llm/_torch/cute_dsl_kernels/rubin/moe/utils.py",
+        "tensorrt_llm/_torch/modules/dwdp/setup.py",
+        "tensorrt_llm/_torch/modules/kimi_kda/kimi_kda_mixer.py",
+        "tensorrt_llm/_torch/modules/situ.py",
+        "tensorrt_llm/_torch/moe/fused_moe/communication/nvlink_one_sided.py",
+        "tensorrt_llm/_torch/moe/fused_moe/fused_moe_cutlass.py",
+        "tensorrt_llm/_torch/moe/fused_moe/mega_moe/mega_moe_cute_dsl.py",
+        "tensorrt_llm/_torch/moe/fused_moe/mega_moe/mega_moe_deepgemm.py",
+        "tensorrt_llm/_torch/pyexecutor/_util.py",
+        "tensorrt_llm/executor/postproc_worker.py",
+        "tensorrt_llm/executor/result.py",
+        "tensorrt_llm/executor/worker.py"
+      ],
+      "coverage_declined": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/thop/moe/communication/moeAlltoAllOp.cpp"
+    }
+  ],
+  "test_db_dir_override": null,
+  "affected_stage_test_counts": {},
+  "affected_stage_split_counts": {},
+  "sanity_required": true,
+  "perfsanity_required": true,
+  "enable_multi_gpu": false,
+  "coverage_dropped_stages": [],
+  "coverage_db_build": null,
+  "coverage_db_commit": null,
+  "coverage_db_lag": null,
+  "coverage_db_base_commit": null,
+  "coverage_db_drift": null,
+  "coverage_db_drift_status": "",
+  "coverage_freshness": "unknown",
+  "coverage_residual_files": [
+    "cpp/tensorrt_llm/thop/moe/communication/moeAlltoAllOp.cpp",
+    "tensorrt_llm/_torch/custom_ops/torch_custom_ops.py",
+    "tensorrt_llm/_torch/cute_dsl_kernels/rubin/moe/manual_mma_128dp.py",
+    "tensorrt_llm/_torch/cute_dsl_kernels/rubin/moe/utils.py",
+    "tensorrt_llm/_torch/modules/dwdp/setup.py",
+    "tensorrt_llm/_torch/modules/kimi_kda/kimi_kda_mixer.py",
+    "tensorrt_llm/_torch/modules/situ.py",
+    "tensorrt_llm/_torch/moe/fused_moe/communication/nvlink_one_sided.py",
+    "tensorrt_llm/_torch/moe/fused_moe/fused_moe_cutlass.py",
+    "tensorrt_llm/_torch/moe/fused_moe/mega_moe/mega_moe_cute_dsl.py",
+    "tensorrt_llm/_torch/moe/fused_moe/mega_moe/mega_moe_deepgemm.py",
+    "tensorrt_llm/_torch/pyexecutor/_util.py",
+    "tensorrt_llm/executor/postproc_worker.py",
+    "tensorrt_llm/executor/result.py",
+    "tensorrt_llm/executor/worker.py"
+  ],
+  "coverage_compatibility": "not_attempted",
+  "coverage_decline_reason": "coverage tier declined: non-Python residual file: cpp/tensorrt_llm/thop/moe/communication/moeAlltoAllOp.cpp",
+  "coverage_decline_category": "non_python",
+  "coverage_no_diff_files": 0
+}
