@@ -1,0 +1,17 @@
+{
+  "SPDX-FileCopyrightText": "Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.",
+  "SPDX-License-Identifier": "Apache-2.0",
+  "coverage_build": 3063,
+  "coverage_commit": null,
+  "coverage_build_result": "FAILURE",
+  "artifact_sha256": {
+    "cbts_pystart_report_x86_64.tar.gz": "71546733cbc2da3b81967a43dc198e41581a81fe9412d8c26265820944f3c282",
+    "cbts_pystart_report_SBSA.tar.gz": "7f1a1dd1b6e61c902315937722f8e5178b0c28cafcadb60d20613cfe1626c241"
+  },
+  "sample_tip": "3cc27151f475b049d15e2c8f4119ca6eb30a11f1",
+  "cohort_count": 465,
+  "one_week_cohort_count": 223,
+  "analysis_helpers_ref": "22ebe475fa4f5809c5e5a384a3512193b059ab2e",
+  "normalization": "strip_noop_diff_lines; exclude empty test names; direct changed tests including directory wrappers",
+  "mode": "raw symbol-touch audit, not a complete CBTS selection replay"
+}
