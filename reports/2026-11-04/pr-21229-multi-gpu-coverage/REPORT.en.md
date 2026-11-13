@@ -30,11 +30,11 @@ All stage information is shown in one table. Durations are Jenkins **Run Pytest 
 | Post-merge #69784 | DGX_B200-4_GPUs-PyTorch-Post-Merge-3 | SUCCESS | One run each; taint needs review | 6362.0 / 6064.6 / +297.4 (+4.9%) | 18 / 16 / 6 | #69732: 6064.6s |
 | Post-merge #69784 | DGX_B200-4_GPUs-PyTorch-Post-Merge-4 | SUCCESS | One run each; no taint (not proof of completeness) | 6062.0 / 6065.7 / -3.7 (-0.1%) | 19 / 17 / 0 | #69732: 6065.7s |
 | Post-merge #69784 | DGX_B200-6_GPUs-PyTorch-M3-Post-Merge-1 | SUCCESS | One run each; taint needs review | 1258.2 / 1569.1 / -310.9 (-19.8%) | 1 / 1 / 1 | #69732: 1569.1s |
-| Rerun #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-1 | FAILURE | Outer test timed out at 3,600 s; do not compare duration | 9069.1 / 9712.0 / not compared | 21 / 14 / 21 | #3051: 9712.0, #3053: 9674.7, #3057: 9975.7 |
-| Rerun #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-2 | SUCCESS | Rerun passed; verify test list and single baseline | 9949.1 / 10880.2 / not matched; no comparison | 24 / 19 / 1 | #3051: 10880.2 |
-| Rerun #69221 | GB300-4_GPUs-PyTorch-Post-Merge-3 | SUCCESS | Rerun passed; evaluate duration | 11182.5 / 9715.4 / test list changed; no comparison | 31 / 27 / 2 | #3051: 9153.2, #3053: 9715.4, #3057: 10055.2 |
-| Rerun #69221 | DGX_H200-4_GPUs-PyTorch-Post-Merge-1 | SUCCESS | Rerun passed; evaluate duration | 9426.0 / 7902.5 / not matched; no comparison | 67 / 65 / 1 | #3051: 8091.3, #3053: 7813.6, #3055: 7730.5, #3057: 7991.4 |
-| Rerun #69221 | GB300-4_GPUs-PyTorch-1 | SUCCESS | Test list changed; not comparable | 11861.3 / 8221.6 / test list changed; no comparison | 98 / 98 / 1 | 8216.7, 8228.0, 7656.4, 8226.6 |
+| Rerun #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-1 | FAILURE | Outer test timed out at 3,600 s; do not compare duration; [case details](case-comparisons/69221-0-01.md) | 9069.1 / 9712.0 / not compared | 21 / 14 / 21 | #3051: 9712.0, #3053: 9674.7, #3057: 9975.7 |
+| Rerun #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-2 | SUCCESS | Rerun passed; verify test list and single baseline; [case details](case-comparisons/69221-1-01.md) | 9949.1 / 10880.2 / not matched; no comparison | 24 / 19 / 1 | #3051: 10880.2 |
+| Rerun #69221 | GB300-4_GPUs-PyTorch-Post-Merge-3 | SUCCESS | Rerun passed; evaluate duration; [case details](case-comparisons/69221-2-01.md) | 11182.5 / 9715.4 / test list changed; no comparison | 31 / 27 / 2 | #3051: 9153.2, #3053: 9715.4, #3057: 10055.2 |
+| Rerun #69221 | DGX_H200-4_GPUs-PyTorch-Post-Merge-1 | SUCCESS | Rerun passed; evaluate duration; [case details](case-comparisons/69221-3-01.md) | 9426.0 / 7902.5 / not matched; no comparison | 67 / 65 / 1 | #3051: 8091.3, #3053: 7813.6, #3055: 7730.5, #3057: 7991.4 |
+| Rerun #69221 | GB300-4_GPUs-PyTorch-1 | SUCCESS | Test list changed; not comparable; [case details](case-comparisons/69221-4-01.md) | 11861.3 / 8221.6 / test list changed; no comparison | 98 / 98 / 1 | 8216.7, 8228.0, 7656.4, 8226.6 |
 | Pre-merge #67913 | DGX_B200-2_GPUs-PyTorch-1 | SUCCESS | Ran; tainted contexts need review | 4586.1 / 3673.7 / +912.4 (+24.8%) | 25 / 24 / 2 | 3983.7, 3363.7 |
 | Pre-merge #67913 | DGX_B200-4_GPUs-PyTorch-1 | SUCCESS | Ran; tainted contexts need review | 6654.6 / 6386.8 / +267.9 (+4.2%) | 18 / 18 / 3 | 6072.7, 6700.8 |
 | Pre-merge #67913 | DGX_B200-4_GPUs-PyTorch-2 | SUCCESS | Ran; tainted contexts need review | 6355.6 / 6219.0 / +136.6 (+2.2%) | 18 / 16 / 1 | 5780.3, 6657.7 |
@@ -99,8 +99,8 @@ All stage information is shown in one table. Durations are Jenkins **Run Pytest 
 | Post-merge #68871 | DGX_B200-4_GPUs-PyTorch-Post-Merge-3 | SUCCESS | Passed; tainted contexts | 6053.1 / 5932.6 / +120.4 (+2.0%) | 18 / 16 / 1 | #3051: 6069.8, #3053: 5795.5, #3055: 5763.3, #3057: 6399.3 |
 | Post-merge #68871 | DGX_B200-4_GPUs-PyTorch-Post-Merge-4 | SUCCESS | Passed; no taint | 6368.7 / 6244.7 / +124.0 (+2.0%) | 18 / 16 / 0 | #3051: 6394.8, #3053: 6094.6, #3055: 6082.9, #3057: 6403.2 |
 | Post-merge #68871 | DGX_B200-6_GPUs-PyTorch-M3-Post-Merge-1 | SUCCESS | Passed; tainted contexts | 1250.2 / 1295.4 / -45.3 (-3.5%) | 1 / 1 / 1 | #3051: 1898.2, #3053: 1263.6, #3055: 1276.6, #3057: 1314.2 |
-| Post-merge #68871 | DGX_B300-4_GPUs-PyTorch-Post-Merge-1 | FAILED | Failed; durations not directly comparable | 10253.9 / 9712.0 / +541.8 (+5.6%) | 24 / 19 / 3 | #3051: 9712.0, #3053: 9674.7, #3057: 9975.7 |
-| Post-merge #68871 | DGX_B300-4_GPUs-PyTorch-Post-Merge-2 | FAILED | Failed; durations not directly comparable | 10847.2 / 10880.2 / -33.0 (-0.3%) | 22 / 16 / 0 | #3051: 10880.2 |
+| Post-merge #68871 | DGX_B300-4_GPUs-PyTorch-Post-Merge-1 | FAILED | Failed; durations not directly comparable; [case details](case-comparisons/68871-0-01.md) | 10253.9 / 9712.0 / +541.8 (+5.6%) | 24 / 19 / 3 | #3051: 9712.0, #3053: 9674.7, #3057: 9975.7 |
+| Post-merge #68871 | DGX_B300-4_GPUs-PyTorch-Post-Merge-2 | FAILED | Failed; durations not directly comparable; [case details](case-comparisons/68871-1-01.md) | 10847.2 / 10880.2 / -33.0 (-0.3%) | 22 / 16 / 0 | #3051: 10880.2 |
 | Post-merge #68871 | DGX_H100-2_GPUs-PyTorch-ModelExpress-Post-Merge-1 | SUCCESS | Passed; no taint | 2365.9 / 2670.9 / -305.0 (-11.4%) | 7 / 7 / 0 | #3051: 2701.6, #3053: 2640.2, #3055: 2527.2, #3057: 2793.0 |
 | Post-merge #68871 | DGX_H100-4_GPUs-PyTorch-Post-Merge-1 | SUCCESS | Passed; no taint | 976.3 / 1036.0 / -59.8 (-5.8%) | 3 / 3 / 0 | #3051: 1061.9, #3053: 1033.3, #3055: 930.4, #3057: 1038.8 |
 | Post-merge #68871 | DGX_H200-4_GPUs-PyTorch-Post-Merge-1 | SUCCESS | Passed; tainted contexts | 9539.8 / 7902.5 / +1637.2 (+20.7%) | 67 / 65 / 1 | #3051: 8091.3, #3053: 7813.6, #3055: 7730.5, #3057: 7991.4 |
@@ -109,7 +109,26 @@ All stage information is shown in one table. Durations are Jenkins **Run Pytest 
 | Post-merge #68871 | GB200-4_GPUs-PyTorch-Post-Merge-2 | SUCCESS | Passed; no taint | 7646.2 / 8232.5 / -586.3 (-7.1%) | 22 / 21 / 0 | #3051: 8730.0, #3053: 8377.5, #3055: 7958.6, #3057: 8087.5 |
 | Post-merge #68871 | GB300-4_GPUs-PyTorch-Post-Merge-1 | SUCCESS | Passed; tainted contexts | 11034.1 / 10983.5 / +50.5 (+0.5%) | 28 / 25 / 1 | #3053: 10335.8, #3055: 10983.5, #3057: 11535.9 |
 | Post-merge #68871 | GB300-4_GPUs-PyTorch-Post-Merge-2 | SUCCESS | Passed; no taint | 9526.2 / 9421.3 / +104.9 (+1.1%) | 29 / 27 / 0 | #3051: 9422.4, #3053: 9420.2, #3055: 8598.4, #3057: 10708.7 |
-| Post-merge #68871 | GB300-4_GPUs-PyTorch-Post-Merge-3 | FAILED | Failed; durations not directly comparable | 9828.4 / 9715.4 / +113.1 (+1.2%) | 29 / 26 / 2 | #3051: 9153.2, #3053: 9715.4, #3057: 10055.2 |
+| Post-merge #68871 | GB300-4_GPUs-PyTorch-Post-Merge-3 | FAILED | Failed; durations not directly comparable; [case details](case-comparisons/68871-2-01.md) | 9828.4 / 9715.4 / +113.1 (+1.2%) | 29 / 26 / 2 | #3051: 9153.2, #3053: 9715.4, #3057: 10055.2 |
+
+## Case-level comparisons for unmatched and failed stages
+
+The stage totals below cannot all be interpreted as overhead: the selected cases changed, or the stage failed before completing. The [case comparison index](case-comparisons/INDEX.md) links to **all available case identities**, including matching passing cases, failed or skipped cases, and cases present only in one side. Each row gives the original outcome and duration for every available baseline. An em dash means no eligible matched observation or an incomplete result; it does not mean zero overhead.
+
+The first three B300/GB300 #69221 stages have many unmatched identities because their selected tests differ from the successful historical baselines. #69221 H200 has 72 passing case identities that match a passing baseline. The pre-merge GB300 comparison has 4,463 matching passing identities, but the raw historical baselines are not fully available: the earlier report preserved values only for cases with at least two passing baseline observations. Consequently, its 3,502 on-side identities without an eligible match cannot be assigned a credible overhead from the available data.
+
+Original result files can contain both an outer pytest wrapper and its inner tests. Their durations overlap, so **do not sum case rows** to calculate a stage duration. Deltas use unique passing on/off records and the median of eligible passing baselines; a single baseline is labeled as such. Failed, skipped, duplicated and timeout cases are retained but are not assigned a passing-case delta. The comparisons remain cross-commit observations rather than proof of collector causation.
+
+| CI | Stage | Available identities | Matched passing | No eligible off match | On failed/skipped/no time | Baseline only | Details |
+|---|---|---:|---:|---:|---:|---:|---|
+| #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-1 | 2396 | 7 | 156 | 8 | 2225 | [All parts](case-comparisons/INDEX.md) · [Part 1](case-comparisons/69221-0-01.md) |
+| #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-2 | 2397 | 9 | 2195 | 7 | 186 | [All parts](case-comparisons/INDEX.md) · [Part 1](case-comparisons/69221-1-01.md) |
+| #69221 | GB300-4_GPUs-PyTorch-Post-Merge-3 | 4514 | 345 | 1715 | 17 | 2437 | [All parts](case-comparisons/INDEX.md) · [Part 1](case-comparisons/69221-2-01.md) |
+| #69221 | DGX_H200-4_GPUs-PyTorch-Post-Merge-1 | 76 | 72 | 0 | 4 | 0 | [All parts](case-comparisons/INDEX.md) · [Part 1](case-comparisons/69221-3-01.md) |
+| #69221 | GB300-4_GPUs-PyTorch-1 | 8886 | 4463 | 3502 | 894 | 27 | [All parts](case-comparisons/INDEX.md) · [Part 1](case-comparisons/69221-4-01.md) |
+| #68871 | DGX_B300-4_GPUs-PyTorch-Post-Merge-1 | 2235 | 2214 | 0 | 12 | 9 | [All parts](case-comparisons/INDEX.md) · [Part 1](case-comparisons/68871-0-01.md) |
+| #68871 | DGX_B300-4_GPUs-PyTorch-Post-Merge-2 | 199 | 100 | 51 | 7 | 41 | [All parts](case-comparisons/INDEX.md) · [Part 1](case-comparisons/68871-1-01.md) |
+| #68871 | GB300-4_GPUs-PyTorch-Post-Merge-3 | 2786 | 2452 | 0 | 13 | 321 | [All parts](case-comparisons/INDEX.md) · [Part 1](case-comparisons/68871-2-01.md) |
 
 ## Coverage DB findings
 
@@ -130,7 +149,7 @@ The #69784 x86 DB and #69221 x86 and SBSA DBs were downloaded and passed SQLite 
 
 ## Evidence and detailed data
 
-- [HTML report and historical per-case comparisons](REPORT.html). The HTML report contains the original detailed case tables; this Markdown report preserves the complete stage table and summarizes the case-level follow-up.
+- [HTML report and historical per-case comparisons](REPORT.html). The HTML report contains the original detailed case tables. The new [case comparison index](case-comparisons/INDEX.md) includes raw on/off case observations for the unmatched and failed stages.
 - [#69732 coverage off: x86 multi-GPU child job #905](https://prod.blsm.nvidia.com/sw-tensorrt-llm-github-4/job/LLM/job/main/job/L0_Test-x86_64-Multi-GPU/905/) · [#69784 coverage on: child job #912](https://prod.blsm.nvidia.com/sw-tensorrt-llm-github-4/job/LLM/job/main/job/L0_Test-x86_64-Multi-GPU/912/).
 - [#69784 x86 multi-GPU coverage archive](https://artifactory.nvidia.com/ui/native/sw-tensorrt-llm-generic-local/llm-artifacts/LLM/main/L0_MergeRequest_PR/69784/cbts-coverage/cbts_pystart_report_x86_64_multi_gpu.tar.gz) · [#69221 CI](https://nv/trt-llm-cicd/job/main/job/L0_MergeRequest_PR/69221/) · [#69221 failure analysis](https://pbss.s8k.io/v1/AUTH_svc_tensorrt/sw-tensorrt-ci-analysis/LLM/main/L0_MergeRequest_PR/69221/failure_analysis.html).
 - [#69544 CI](https://nv/trt-llm-cicd/job/main/job/L0_MergeRequest_PR/69544/) · [#69544 failure analysis](https://pbss.s8k.io/v1/AUTH_svc_tensorrt/sw-tensorrt-ci-analysis/LLM/main/L0_MergeRequest_PR/69544/failure_analysis.html).
