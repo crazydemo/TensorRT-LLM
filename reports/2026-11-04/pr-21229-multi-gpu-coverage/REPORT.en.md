@@ -16,11 +16,11 @@ This report evaluates which single-node multi-GPU stages can collect CBTS covera
 
 ## How to read the table
 
-All stage information is shown in one table. Durations are Jenkins **Run Pytest wall time**, including that step's setup and teardown; they exclude separate container preparation and any separately named isolated test step. For #69221 H200, an additional 191.8-second `Run Pytest (Isolated)` step is excluded. Differences use the original millisecond durations before rounding, so subtracting the displayed values may differ by 0.1 s.
+All stage information is shown in one table. Durations are Jenkins **Run Pytest wall time**, including that step's setup and teardown; they exclude separate container preparation and any separately named isolated test step. For #69221 H200, an additional 191.8-second `Run Pytest (Isolated)` step is excluded. The #69784 paired differences use original millisecond durations before rounding, so subtracting displayed values may differ by 0.1 s. The #69221 differences are calculated from the displayed, rounded stage values.
 
 - The format **on / off / difference** is seconds and percentage. #69784 uses the single matching #69732 run as its off baseline. For #67913 and #67077, historical x86 child jobs #3045/#3039 and SBSA child jobs #4518/#4515/#4514/#4513 form the off baseline. Post-merge #68569 and #68871 use official post-merge #3051/#3053/#3055/#3057, subject to the per-row availability shown below; GB300 #3051 failed and is excluded from the applicable baseline. Historical off values are medians where multiple observations exist.
 - Contexts / passed / tainted counts refer to **nonempty outer contexts in the coverage DB**, not JUnit inner cases. Passed is the DB's aggregate outcome; tainted includes stage-level taint, counted once per affected context. A context may represent a pytest batch containing many inner tests.
-- A negative difference is an observation, not proof that collecting coverage makes tests faster. Changes in commits, tests, machines, caches, load, and retries limit comparisons. Failure and unmatched test lists are marked accordingly.
+- A negative difference is an observation, not proof that collecting coverage makes tests faster. Changes in commits, tests, machines, caches, load, and retries limit comparisons. Failed runs and changed test lists are marked accordingly; their arithmetic differences are shown but are not reliable estimates of collector overhead.
 
 ## Stage results
 
@@ -30,11 +30,11 @@ All stage information is shown in one table. Durations are Jenkins **Run Pytest 
 | Post-merge #69784 | DGX_B200-4_GPUs-PyTorch-Post-Merge-3 | SUCCESS | One run each; taint needs review | 6362.0 / 6064.6 / +297.4 (+4.9%) | 18 / 16 / 6 | #69732: 6064.6s |
 | Post-merge #69784 | DGX_B200-4_GPUs-PyTorch-Post-Merge-4 | SUCCESS | One run each; no taint (not proof of completeness) | 6062.0 / 6065.7 / -3.7 (-0.1%) | 19 / 17 / 0 | #69732: 6065.7s |
 | Post-merge #69784 | DGX_B200-6_GPUs-PyTorch-M3-Post-Merge-1 | SUCCESS | One run each; taint needs review | 1258.2 / 1569.1 / -310.9 (-19.8%) | 1 / 1 / 1 | #69732: 1569.1s |
-| Rerun #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-1 | FAILURE | Outer test timed out at 3,600 s; do not compare duration; [case details](case-comparisons/69221-0-01.md) | 9069.1 / 9712.0 / not compared | 21 / 14 / 21 | #3051: 9712.0, #3053: 9674.7, #3057: 9975.7 |
-| Rerun #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-2 | SUCCESS | Rerun passed; verify test list and single baseline; [case details](case-comparisons/69221-1-01.md) | 9949.1 / 10880.2 / not matched; no comparison | 24 / 19 / 1 | #3051: 10880.2 |
-| Rerun #69221 | GB300-4_GPUs-PyTorch-Post-Merge-3 | SUCCESS | Rerun passed; evaluate duration; [case details](case-comparisons/69221-2-01.md) | 11182.5 / 9715.4 / test list changed; no comparison | 31 / 27 / 2 | #3051: 9153.2, #3053: 9715.4, #3057: 10055.2 |
-| Rerun #69221 | DGX_H200-4_GPUs-PyTorch-Post-Merge-1 | SUCCESS | Rerun passed; evaluate duration; [case details](case-comparisons/69221-3-01.md) | 9426.0 / 7902.5 / not matched; no comparison | 67 / 65 / 1 | #3051: 8091.3, #3053: 7813.6, #3055: 7730.5, #3057: 7991.4 |
-| Rerun #69221 | GB300-4_GPUs-PyTorch-1 | SUCCESS | Test list changed; not comparable; [case details](case-comparisons/69221-4-01.md) | 11861.3 / 8221.6 / test list changed; no comparison | 98 / 98 / 1 | 8216.7, 8228.0, 7656.4, 8226.6 |
+| Rerun #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-1 | FAILURE | Outer test timed out at 3,600 s; duration is incomplete; [case details](case-comparisons/69221-0-01.md) | 9069.1 / 9712.0 / -642.9 (-6.6%) | 21 / 14 / 21 | #3051: 9712.0, #3053: 9674.7, #3057: 9975.7 |
+| Rerun #69221 | DGX_B300-4_GPUs-PyTorch-Post-Merge-2 | SUCCESS | Rerun passed; verify test list and single baseline; [case details](case-comparisons/69221-1-01.md) | 9949.1 / 10880.2 / -931.1 (-8.6%) | 24 / 19 / 1 | #3051: 10880.2 |
+| Rerun #69221 | GB300-4_GPUs-PyTorch-Post-Merge-3 | SUCCESS | Rerun passed; evaluate duration; [case details](case-comparisons/69221-2-01.md) | 11182.5 / 9715.4 / +1467.1 (+15.1%) | 31 / 27 / 2 | #3051: 9153.2, #3053: 9715.4, #3057: 10055.2 |
+| Rerun #69221 | DGX_H200-4_GPUs-PyTorch-Post-Merge-1 | SUCCESS | Rerun passed; evaluate duration; [case details](case-comparisons/69221-3-01.md) | 9426.0 / 7902.5 / +1523.5 (+19.3%) | 67 / 65 / 1 | #3051: 8091.3, #3053: 7813.6, #3055: 7730.5, #3057: 7991.4 |
+| Rerun #69221 | GB300-4_GPUs-PyTorch-1 | SUCCESS | Test list changed; observed difference only; [case details](case-comparisons/69221-4-01.md) | 11861.3 / 8221.6 / +3639.7 (+44.3%) | 98 / 98 / 1 | 8216.7, 8228.0, 7656.4, 8226.6 |
 | Pre-merge #67913 | DGX_B200-2_GPUs-PyTorch-1 | SUCCESS | Ran; tainted contexts need review | 4586.1 / 3673.7 / +912.4 (+24.8%) | 25 / 24 / 2 | 3983.7, 3363.7 |
 | Pre-merge #67913 | DGX_B200-4_GPUs-PyTorch-1 | SUCCESS | Ran; tainted contexts need review | 6654.6 / 6386.8 / +267.9 (+4.2%) | 18 / 18 / 3 | 6072.7, 6700.8 |
 | Pre-merge #67913 | DGX_B200-4_GPUs-PyTorch-2 | SUCCESS | Ran; tainted contexts need review | 6355.6 / 6219.0 / +136.6 (+2.2%) | 18 / 16 / 1 | 5780.3, 6657.7 |
