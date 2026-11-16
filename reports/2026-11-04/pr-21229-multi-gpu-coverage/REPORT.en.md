@@ -7,16 +7,6 @@ Updated 2026-11-16 · [PR #21229](https://github.com/NVIDIA/TensorRT-LLM/pull/21
 
 This report evaluates which single-node multi-GPU stages can collect CBTS coverage safely, the observed runtime changes, and which coverage data needs investigation. Ray, multi-node, and CPP stages were excluded from collection in these experiments. Passing CI alone does not establish that the data is complete.
 
-## Latest GB300 pre-merge result
-
-The current paired comparison is **+290.7 s (+2.3%)**, not the historical +44.3% cross-commit difference. Both runs passed with the same 9,160 JUnit identities; their commits differ only in the coverage switch.
-
-| Stage | Coverage off: #70097 | Coverage on: #70387 | Observed difference | Coverage contexts / passed / tainted |
-|---|---:|---:|---:|---:|
-| GB300-4_GPUs-PyTorch-1 | 12,765.3 s | 13,056.0 s | **+290.7 s (+2.3%)** | 113 / 112 / 3 |
-
-This is one run per condition. The older #69221 row remains in the stage table as a historical cross-commit observation; its +44.3% includes test-list changes and is not the current paired overhead estimate. [All paired case results](case-comparisons/INDEX.md) · [DB and taint details](#gb300-pre-merge-paired-comparison-70097-vs-70387).
-
 ## Key findings
 
 - **GB300 pre-merge paired experiment:** #70097 (coverage off) and #70387 (coverage on) both passed using commits that differ only in the switch. Run Pytest increased from 12,765.334 s to 13,055.994 s: **+290.660 s (+2.3%)**. Both runs have exactly 9,160 JUnit identities (8,264 passed and 896 skipped in each). The coverage DB contains 113 outer contexts, 112 passed and 3 tainted. This is one paired observation, not a measured distribution. [Case-level comparisons](case-comparisons/70387-gb300-01.md).
