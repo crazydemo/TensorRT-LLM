@@ -3,12 +3,13 @@
 
 # Multi-GPU coverage collection: CI results and overhead
 
-Updated 2026-11-13 · [PR #21229](https://github.com/NVIDIA/TensorRT-LLM/pull/21229)
+Updated 2026-11-16 · [PR #21229](https://github.com/NVIDIA/TensorRT-LLM/pull/21229)
 
 This report evaluates which single-node multi-GPU stages can collect CBTS coverage safely, the observed runtime changes, and which coverage data needs investigation. Ray, multi-node, and CPP stages were excluded from collection in these experiments. Passing CI alone does not establish that the data is complete.
 
 ## Key findings
 
+- **GB300 pre-merge paired experiment:** #70097 (coverage off) and #70387 (coverage on) both passed using commits that differ only in the switch. Run Pytest increased from 12,765.334 s to 13,055.994 s: **+290.660 s (+2.3%)**. Both runs have exactly 9,160 JUnit identities (8,264 passed and 896 skipped in each). The coverage DB contains 113 outer contexts, 112 passed and 3 tainted. This is one paired observation, not a measured distribution. [Case-level comparisons](case-comparisons/70387-gb300-01.md).
 - **B200 paired experiment:** all four stages passed with collection off in [CI #69732](https://nv/trt-llm-cicd/job/main/job/L0_MergeRequest_PR/69732/) and on in [CI #69784](https://nv/trt-llm-cicd/job/main/job/L0_MergeRequest_PR/69784/). The commits differ only in the coverage enable switch. Observed wall-time changes were +0.2%, +4.9%, -0.1%, and -19.8%, respectively. One sample per condition cannot establish a stable overhead distribution; the faster M3 run does not show that collection improves performance.
 - **Data quality:** #69784 B200 Post-Merge-2, Post-Merge-3, and M3 had 1, 6, and 1 tainted contexts, respectively; Post-Merge-4 had none. The M3 stage had only one context, which was tainted. Taint indicates an attribution or completeness risk, not necessarily a test failure; absence of taint is not proof of completeness.
 - **Timeout:** #69221 B300 Post-Merge-1 failed when an outer `attention/multi_gpu` pytest batch reached the 3,600-second timeout. Its coverage DB has a stage-level `context_channel_unreachable` taint affecting all 21 nonempty contexts. A B300 stage also timed out with coverage disabled in #69544, but the exact inner test was not confirmed to be the same. The cause remains unproven.
@@ -17,9 +18,9 @@ This report evaluates which single-node multi-GPU stages can collect CBTS covera
 
 ## How to read the table
 
-All stage information is shown in one table. Durations are Jenkins **Run Pytest wall time**, including that step's setup and teardown; they exclude separate container preparation and any separately named isolated test step. For #69221 H200, an additional 191.8-second `Run Pytest (Isolated)` step is excluded. The #69784 paired differences use original millisecond durations before rounding, so subtracting displayed values may differ by 0.1 s. The #69221 differences are calculated from the displayed, rounded stage values.
+All stage information is shown in one table. Durations are Jenkins **Run Pytest wall time**, including that step's setup and teardown; they exclude separate container preparation and any separately named isolated test step. For #69221 H200, an additional 191.8-second `Run Pytest (Isolated)` step is excluded. The #69784 and #70387 paired differences use original millisecond durations before rounding, so subtracting displayed values may differ by 0.1 s. The #69221 differences are calculated from the displayed, rounded stage values.
 
-- The format **on / off / difference** is seconds and percentage. #69784 uses the single matching #69732 run as its off baseline. For #67913 and #67077, historical x86 child jobs #3045/#3039 and SBSA child jobs #4518/#4515/#4514/#4513 form the off baseline. Post-merge #68569 and #68871 use official post-merge #3051/#3053/#3055/#3057, subject to the per-row availability shown below; GB300 #3051 failed and is excluded from the applicable baseline. Historical off values are medians where multiple observations exist.
+- The format **on / off / difference** is seconds and percentage. #69784 uses the single matching #69732 run as its off baseline; #70387 uses #70097. For #67913 and #67077, historical x86 child jobs #3045/#3039 and SBSA child jobs #4518/#4515/#4514/#4513 form the off baseline. Post-merge #68569 and #68871 use official post-merge #3051/#3053/#3055/#3057, subject to the per-row availability shown below; GB300 #3051 failed and is excluded from the applicable baseline. Historical off values are medians where multiple observations exist.
 - Contexts / passed / tainted counts refer to **nonempty outer contexts in the coverage DB**, not JUnit inner cases. Passed is the DB's aggregate outcome; tainted includes stage-level taint, counted once per affected context. A context may represent a pytest batch containing many inner tests.
 - A negative difference is an observation, not proof that collecting coverage makes tests faster. Changes in commits, tests, machines, caches, load, and retries limit comparisons. Failed runs and changed test lists are marked accordingly; their arithmetic differences are shown but are not reliable estimates of collector overhead.
 
@@ -27,6 +28,7 @@ All stage information is shown in one table. Durations are Jenkins **Run Pytest 
 
 | Experiment / CI | Stage | Status | Assessment | On / off / difference | Contexts / passed / tainted | Off baseline observations (s) |
 |---|---|---|---|---|---|---|
+| Paired #70387 | GB300-4_GPUs-PyTorch-1 | SUCCESS | One run per condition; 9,160 identical JUnit identities; 3 tainted contexts; [case details](case-comparisons/70387-gb300-01.md) | 13056.0 / 12765.3 / +290.7 (+2.3%) | 113 / 112 / 3 | #70097: 12765.3 |
 | Post-merge #69784 | DGX_B200-4_GPUs-PyTorch-Post-Merge-2 | SUCCESS | One run each; taint needs review | 5469.7 / 5460.0 / +9.8 (+0.2%) | 19 / 16 / 1 | #69732: 5460.0s |
 | Post-merge #69784 | DGX_B200-4_GPUs-PyTorch-Post-Merge-3 | SUCCESS | One run each; taint needs review | 6362.0 / 6064.6 / +297.4 (+4.9%) | 18 / 16 / 6 | #69732: 6064.6s |
 | Post-merge #69784 | DGX_B200-4_GPUs-PyTorch-Post-Merge-4 | SUCCESS | One run each; no taint (not proof of completeness) | 6062.0 / 6065.7 / -3.7 (-0.1%) | 19 / 17 / 0 | #69732: 6065.7s |
@@ -139,6 +141,12 @@ These are cross-commit observations, not a controlled measurement of collector o
 - **GB300 Post-Merge-3 (+1,467.1 s):** #69221 includes an outer `unittest/_torch/modules/mamba` wrapper that took **1,390.2 s**; no wrapper with that identity was found in the eligible #3051/#3053/#3057 baseline archives. The older runs could have grouped tests differently, so the wrapper duration alone is not the causal increment. Some matching tests were also slower: Qwen3.8 Flash Next prefix-cache 1,028.0 s versus a 885.8 s median (+142.2 s), and a DeepSeekV3Lite NVFP4 configuration 611.3 s versus 514.8 s (+96.5 s). [GB300 post-merge case details](case-comparisons/69221-2-01.md).
 - **H200 Post-Merge-1 (+1,523.5 s):** most matched case identities are present in both runs. The 25 matched `TestDeepSeekV3Lite::test_fp8_block_scales_4gpus` configurations have a **sum of per-case differences of +1,045.0 s** against their individual historical medians; the median per-case difference is +48.7 s. For example, one configuration took 129.2 s versus 64.1 s (+65.1 s). Summing case medians is diagnostic and is not necessarily equal to the difference between stage medians; commits and machines differ. This systematic slowdown is a good candidate for same-commit on/off testing. [H200 case details](case-comparisons/69221-3-01.md).
 
+## GB300 pre-merge paired comparison: #70097 vs #70387
+
+Both stages succeeded. The case sets and statuses match exactly: 8,264 passed and 896 skipped in each. The largest observed increase among outer test cases was `TestGLM52NVFP4::test_kv_cache_offload[kv_dtype=nvfp4]`, from 1,010.17 s to 1,265.26 s (+255.09 s); this context is tainted in the coverage DB. The largest observed decrease was Qwen3.8 Flash Next `test_mtp3_gsm8k_and_long_context`, from 639.25 s to 509.03 s (-130.22 s). These case differences can include normal machine, cache, or runtime variation; a single pair cannot attribute them definitively to collection. Outer pytest wrappers include inner cases, so their durations must not be summed together.
+
+The SBSA coverage DB passed SQLite `integrity_check`. It recorded 113 nonempty outer contexts: 112 passed and 3 tainted. The tainted contexts are DeepSeekV4 Flash `test_kv_cache_offload_block_reuse`, GLM52 NVFP4 `test_kv_cache_offload[kv_dtype=nvfp4]`, and Qwen3.8 Flash Next `test_fp8_nixl_python[prefix_cache]`; all recorded `subscriber_confirmed_dead`. A taint signals possible incomplete attribution or coverage, not necessarily a failing test. [All 9,160 case identities](case-comparisons/INDEX.md).
+
 ## Coverage DB findings
 
 The #69784 x86 DB and #69221 x86 and SBSA DBs were downloaded and passed SQLite `integrity_check`.
@@ -162,3 +170,5 @@ The #69784 x86 DB and #69221 x86 and SBSA DBs were downloaded and passed SQLite 
 - [#69732 coverage off: x86 multi-GPU child job #905](https://prod.blsm.nvidia.com/sw-tensorrt-llm-github-4/job/LLM/job/main/job/L0_Test-x86_64-Multi-GPU/905/) · [#69784 coverage on: child job #912](https://prod.blsm.nvidia.com/sw-tensorrt-llm-github-4/job/LLM/job/main/job/L0_Test-x86_64-Multi-GPU/912/).
 - [#69784 x86 multi-GPU coverage archive](https://artifactory.nvidia.com/ui/native/sw-tensorrt-llm-generic-local/llm-artifacts/LLM/main/L0_MergeRequest_PR/69784/cbts-coverage/cbts_pystart_report_x86_64_multi_gpu.tar.gz) · [#69221 CI](https://nv/trt-llm-cicd/job/main/job/L0_MergeRequest_PR/69221/) · [#69221 failure analysis](https://pbss.s8k.io/v1/AUTH_svc_tensorrt/sw-tensorrt-ci-analysis/LLM/main/L0_MergeRequest_PR/69221/failure_analysis.html).
 - [#69544 CI](https://nv/trt-llm-cicd/job/main/job/L0_MergeRequest_PR/69544/) · [#69544 failure analysis](https://pbss.s8k.io/v1/AUTH_svc_tensorrt/sw-tensorrt-ci-analysis/LLM/main/L0_MergeRequest_PR/69544/failure_analysis.html).
+
+- GB300 paired sources: [coverage off #70097](https://nv/trt-llm-cicd/job/main/job/L0_MergeRequest_PR/70097/) · [coverage on #70387](https://nv/trt-llm-cicd/job/main/job/L0_MergeRequest_PR/70387/) · [SBSA coverage DB](https://artifactory.nvidia.com/ui/native/sw-tensorrt-llm-generic-local/llm-artifacts/LLM/main/L0_MergeRequest_PR/70387/cbts-coverage/cbts_pystart_report_SBSA_multi_gpu.tar.gz).
