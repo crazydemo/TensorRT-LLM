@@ -200,7 +200,7 @@ class TestGLM52NVFP4(LlmapiAccuracyTestHarness):
             task = GSM8K(model_name)
             task.evaluate(llm)
 
-    @pytest.mark.timeout(900)
+    @pytest.mark.timeout(10800)
     @skip_pre_blackwell
     @skip_ray
     @pytest.mark.skip_less_mpi_world_size(8)

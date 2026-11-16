@@ -411,6 +411,7 @@ class TestKimiK3DSpark(LlmapiAccuracyTestHarness):
     MODEL_PATH = f"{llm_models_root()}/Kimi-K3-NVFP4"
     DSPARK_MODEL_PATH = f"{llm_models_root()}/RadixArk-Kimi-K3-DSpark"
 
+    @pytest.mark.timeout(10800)
     @pytest.mark.skip_less_mpi_world_size(8)
     def test_gsm8k_tep8(self):
         """GSM8K plus an acceptance-length gate on the TEP8 DSpark recipe.
