@@ -129,10 +129,14 @@ The report can be reviewed using current evidence without requiring another full
 | B200 runtime | Four same-baseline pairs succeeded; largest increase +297.4 s | Verify JUnit-set equality from existing archives; investigate Post-Merge-3 and M3 context taints |
 | H200 runtime | Same case identities; widespread passing-case slowdown | Model/runtime owners to investigate DeepSeekV3Lite FP8; collector causation unproven |
 | GB300 Post-Merge-3 and B300 workload | Case-level timing and overlap quantified | Account for redistribution, added/removed identities and failures before interpreting stage totals |
-| B300 timeout | Timeout with coverage on; a timeout also observed with coverage off | Establish whether the same inner test failed, from #69221/#69544 artifacts; no causal conclusion yet |
+| B300 timeout | Same outer attention batch times out at 3,600 s with coverage on (#69221) and off (#69544); off #70619 also times out in that family | Exact inner parameter attribution differs between diagnostics; non-aggravation is not established. See [B300 audit and focused validation plan](B300-TIMEOUT.md) |
 | Coverage completeness | Downloaded DBs pass integrity checks; context taints enumerated | Collector owners to assess lost attribution, especially M3 and B300 stage-wide taint |
 | Other historical stage rows | Test outcomes, DB counts and observed stage differences available | Case-set equality and same-baseline overhead have not been established |
 | Full-pipeline cost | Not measured by the existing Run Pytest table | Retrieval/aggregation/upload and elapsed job/pipeline cost remain outside this report's claims |
+
+## B300 timeout follow-up
+
+The [B300 timeout audit](B300-TIMEOUT.md) adds raw-log and artifact evidence from coverage-on #69221 and coverage-off #69544/#70619. Both settings hit the same outer attention batch deadline; this is stronger than merely observing different B300 failures. It does not prove an unchanged timeout risk. The audit also separates the #70619 Post-Merge-2 constructor TypeError from actual timeouts and proposes focused alternating off/on diagnostics instead of repeated on-only or full-suite runs. No new CI was triggered for the audit.
 
 ## Evidence and detailed data
 
