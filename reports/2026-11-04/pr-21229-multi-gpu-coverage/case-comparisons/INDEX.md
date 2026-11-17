@@ -3,7 +3,7 @@
 
 # Case comparison index
 
-[Back to the main report](../REPORT.en.md)
+[Back to the main report](../REPORT.en.md) · [Case-set and timing summary](../CASE-SUMMARY.md)
 
 All available original JUnit records for the five #69221 stages and three failed #68871 stages are represented. Post-merge baselines show all retrieved #3051, #3053, #3055, and #3057 observations; only the successful stage baselines named in the main report are included in the median. The #69221 pre-merge GB300 comparison has only previously preserved historical matched case values, not complete raw baseline files; missing baselines remain explicit. Each report contains both on-only and baseline-only identities.
 
