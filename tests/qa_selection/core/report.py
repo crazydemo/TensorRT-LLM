@@ -146,6 +146,7 @@ class Outcome:
     required_gpus: int
     required_gpus_from: Tuple[str, ...]
     rung: Optional[int]
+    gpu_count_blocker: Optional[str] = None
 
     @property
     def selected(self) -> bool:
@@ -158,6 +159,10 @@ class Outcome:
             "nodeid": self.nodeid,
             "selected": self.selected,
             "blockers": list(self.blockers),
+            "machine_blockers": [
+                blocker for blocker in self.blockers if blocker != self.gpu_count_blocker
+            ],
+            "gpu_count_blocker": self.gpu_count_blocker,
             "required_gpus": self.required_gpus,
             "required_gpus_from": list(self.required_gpus_from),
             "rung": self.rung,

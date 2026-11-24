@@ -36,5 +36,8 @@ def test_short_ladder(selection):
     assert DeviceCases.EIGHT_GPUS not in run.ids(1) + run.ids(4)
     assert run.outcome(DeviceCases.EIGHT_GPUS)["selected"] is False
     assert run.outcome(DeviceCases.EIGHT_GPUS)["blockers"] == [blocker]
+    assert run.outcome(DeviceCases.EIGHT_GPUS)["required_gpus"] == 8
+    assert run.outcome(DeviceCases.EIGHT_GPUS)["machine_blockers"] == []
+    assert run.outcome(DeviceCases.EIGHT_GPUS)["gpu_count_blocker"] == blocker
     assert run.record["deselected_by_reason"][blocker] == [DeviceCases.EIGHT_GPUS]
     assert "warnings summary" not in run.result.stdout.str()

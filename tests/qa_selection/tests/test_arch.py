@@ -67,6 +67,24 @@ def test_cpu_arch(selection):
     assert ArchCases.X86_ONLY not in gb200.selected
 
 
+@pytest.mark.parametrize("machine, x86_only", [("VR200", False), ("R100", True)])
+def test_rubin_profiles(selection, machine, x86_only):
+    """Rubin profiles retain their actual CPU architecture and support SM107 gates."""
+    run = selection.run(ArchCases.MODULE, f"--machine={machine}", "--selection-out-dir={out}")
+    assert (ArchCases.X86_ONLY in run.selected) is x86_only
+    assert run.record["profile"]["sm"] == 107
+    profile = default_catalog().profile_for(machine)
+    assert not default_rule_table()["This test is not supported in pre-Rubin architecture"].blocks(
+        profile
+    )
+    assert not default_rule_table()["This test is only supported in Rubin architecture"].blocks(
+        profile
+    )
+    outcome = run.outcome(ArchCases.X86_ONLY)
+    assert outcome["gpu_count_blocker"] is None
+    assert outcome["machine_blockers"] == outcome["blockers"]
+
+
 def test_memory_every_level(selection):
     """Every level's memory demand applies; a method's does not replace its class's."""
     run = selection.run(MarkerCases.MODULE, "--machine=B200", "--selection-out-dir={out}")

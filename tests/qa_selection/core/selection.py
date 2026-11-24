@@ -66,6 +66,7 @@ class Selection:
             required_gpus=demand.required_gpus,
             required_gpus_from=demand.required_gpus_from,
             rung=demand.assign_rung(ladder),
+            gpu_count_blocker=count_blocker,
         )
 
     def partition(self, items: Sequence[T]) -> Tuple[List[T], List[T]]:

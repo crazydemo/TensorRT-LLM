@@ -30,6 +30,22 @@
     "max_gpu_per_node": 4,
     "cpu_arch": "aarch64"
   },
+  "VR200": {
+    "sm": 107,
+    "device_name": "VR NVL72 ES",
+    "device_memory_mib": 168896,
+    "max_gpu_per_node": 4,
+    "cpu_arch": "aarch64",
+    "ladder": [1, 4]
+  },
+  "R100": {
+    "sm": 107,
+    "device_name": "Graphics Device",
+    "device_memory_mib": 254688,
+    "max_gpu_per_node": 8,
+    "cpu_arch": "x86_64",
+    "ladder": [1, 4, 8]
+  },
   "GB300": {
     "sm": 103,
     "device_name": "GB300",

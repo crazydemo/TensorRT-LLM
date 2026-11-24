@@ -58,6 +58,11 @@ A profile is what the selection rules ask about a machine:
 `ladder` is optional: the default `--ladder`, no rung above `max_gpu_per_node`. Add or edit one to
 try another allocation policy; `--ladder` overrides it for a run.
 
+`VR200` describes the dlcluster NVL72 ES nodes (SM107, aarch64, four 168896-MiB GPUs).
+`R100` describes the x86_64 TS2 node (SM107, eight 254688-MiB GPUs), whose probe reports
+`Graphics Device`. These profiles do not stand in for other Rubin board configurations.
+For another cluster or stepping, probe the actual host or supply its saved local profile.
+
 **Cluster machines** are in [`core/profiles.json`](core/profiles.json). The cluster selects in a
 CPU container before any GPU is allocated, so `--machine` names an entry there. To add one, run
 the plugin on the machine without `--machine`, and copy the `profile` of its `local.json` under the
@@ -88,7 +93,11 @@ A test is kept when the machine's card may run it and a rung holds it:
 A `skipif`'s condition is never evaluated: it describes the host that collected the test. The
 plugin decides the list left after `--test-list` and waive filtering, and deselects through
 pytest's own hook. `<machine>.json` records the profile with the run's ladder, the counts and each test's outcome; each
-`.ids` list holds one rung's node ids. The terminal shows the counts by rung and by reason, and
+`.ids` list holds one rung's node ids. Each outcome also separates `machine_blockers` from
+`gpu_count_blocker`. A scheduler can inspect `required_gpus` on outcomes above the single-node
+ladder and send hardware-compatible cases to a multi-node backend. Such cases remain deselected
+for this plugin's single-node run; their demand must not be inferred from their absent `rung`.
+The terminal shows the counts by rung and by reason, and
 `-v` adds node ids. An unknown machine, a rung above the node, or a leftover list of this
 machine's in the output directory is a usage error.
 
@@ -133,7 +142,7 @@ checks the selection rule directly.
 | A named machine is decided from its catalogue profile, never the collecting host: its architecture, wherever the mark sits; the SM120-family rule keeps SM121 | [`test_arch.py`](tests/test_arch.py) (13) |
 | A test's GPU count is its markers, read as the integration conftest reads them | [`test_gpu_count.py`](tests/test_gpu_count.py) (4) |
 | Each kept test is on its smallest rung, in the record and in exactly one list; a test above the largest rung is deselected with its reason | [`test_ladder.py`](tests/test_ladder.py) (3), [`test_largest_rung.py`](tests/test_largest_rung.py) (1) |
-| The catalogue is the five cluster machines; without `--ladder`, a run uses the profile's ladder, and the record carries the profile | [`test_profiles.py`](tests/test_profiles.py) (8) |
+| Without `--ladder`, each catalogue machine uses its profile's ladder, and the record carries the profile | [`test_profiles.py`](tests/test_profiles.py) |
 | Without `--machine`, this host is the target, recorded as `local`: a saved `local.json` profile, else a probe; a bad `local.json`, or a host it cannot probe, is a usage error before collection | [`test_saved_profile.py`](tests/test_saved_profile.py) (2), [`test_local_machine.py`](tests/test_local_machine.py) (1), [`test_unprobed_host.py`](tests/test_unprobed_host.py) (1) |
 
 ## Config
